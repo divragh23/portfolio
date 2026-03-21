@@ -831,3 +831,136 @@ a {
     font-size: clamp(2.5rem, 14vw, 4rem);
   }
 }
+
+
+.floating-contact {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 30;
+  width: 6.5rem;
+  height: 6.5rem;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  isolation: isolate;
+}
+
+.floating-contact-ring,
+.floating-contact-logo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    filter 220ms ease;
+}
+
+.floating-contact-logo {
+  inset: 0.9rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(255, 236, 246, 0.22), rgba(120, 146, 255, 0.18));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+.floating-contact-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 0.7rem;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.24));
+}
+
+.floating-contact-ring {
+  opacity: 0;
+  transform: scale(0.78);
+  filter: blur(6px);
+}
+
+.floating-contact-ring svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.floating-contact-ring text {
+  fill: var(--accent-strong);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.floating-contact:hover .floating-contact-ring,
+.floating-contact:focus-visible .floating-contact-ring {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  animation: contact-ring-spin 9s linear infinite;
+}
+
+.floating-contact:hover .floating-contact-logo,
+.floating-contact:focus-visible .floating-contact-logo {
+  transform: scale(0.86);
+}
+
+.floating-contact:hover .floating-contact-logo,
+.floating-contact:focus-visible .floating-contact-logo,
+.floating-contact:active .floating-contact-logo {
+  filter: brightness(1.08);
+}
+
+.floating-contact:focus-visible {
+  outline: none;
+}
+
+.floating-contact:focus-visible .floating-contact-logo {
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 0 0 4px rgba(240, 198, 228, 0.28);
+}
+
+@keyframes contact-ring-spin {
+  from {
+    transform: scale(1) rotate(0deg);
+  }
+
+  to {
+    transform: scale(1) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-contact-ring,
+  .floating-contact-logo {
+    transition: none;
+  }
+
+  .floating-contact:hover .floating-contact-ring,
+  .floating-contact:focus-visible .floating-contact-ring {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .floating-contact {
+    width: 5.5rem;
+    height: 5.5rem;
+    right: max(0.85rem, env(safe-area-inset-right));
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+  }
+
+  .floating-contact-ring text {
+    font-size: 0.64rem;
+    letter-spacing: 0.26em;
+  }
+}
