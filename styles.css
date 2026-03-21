@@ -552,6 +552,54 @@ a {
   line-height: 1.65;
 }
 
+.highlight-card__scorebox {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.highlight-card__scorehead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.highlight-card__scorelabel {
+  color: var(--accent-strong);
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.highlight-card__scoredate {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.highlight-card__scorerows {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.highlight-card__scorerow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.highlight-card__scorerow strong {
+  font-size: 1.12rem;
+}
+
+.highlight-card__scorerow--favorite {
+  color: var(--accent-strong);
+}
+
 .highlight-card__link {
   display: inline-flex;
   margin-top: 0.25rem;

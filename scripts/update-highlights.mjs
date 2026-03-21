@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -51,6 +51,8 @@ const teams = [
 ];
 
 const publishedAfter = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString();
+const existing = await readExistingHighlights();
+const existingByKey = new Map(existing.items.map((item) => [item.key, item]));
 
 const items = [];
 
@@ -59,6 +61,7 @@ for (const team of teams) {
   const best = rankCandidates(team, candidates)[0];
 
   if (!best) {
+    const previous = existingByKey.get(team.key);
     items.push({
       key: team.key,
       team: team.team,
@@ -68,10 +71,14 @@ for (const team of teams) {
       publishedAt: null,
       channelTitle: null,
       watchUrl: null,
+      previewSeconds: previous?.previewSeconds ?? 30,
+      boxScore: previous?.boxScore ?? null,
       fallbackMessage: "No recent highlights available from the configured search queries.",
     });
     continue;
   }
+
+  const previous = existingByKey.get(team.key);
 
   items.push({
     key: team.key,
@@ -82,6 +89,8 @@ for (const team of teams) {
     publishedAt: best.snippet.publishedAt,
     channelTitle: best.snippet.channelTitle,
     watchUrl: `https://www.youtube.com/watch?v=${best.id.videoId}`,
+    previewSeconds: previous?.previewSeconds ?? 30,
+    boxScore: previous?.boxScore ?? null,
     fallbackMessage: null,
   });
 }
@@ -161,4 +170,16 @@ function scoreCandidate(team, item) {
   }
 
   return score;
+}
+
+async function readExistingHighlights() {
+  try {
+    const raw = await readFile(outputFile, "utf8");
+    const parsed = JSON.parse(raw);
+    return {
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+    };
+  } catch {
+    return { items: [] };
+  }
 }
