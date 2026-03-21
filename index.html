@@ -54,6 +54,134 @@
             </h1>
           </div>
         </section>
+
+        <section class="section reveal">
+          <div class="section-heading">
+            <p class="eyebrow">Now Playing</p>
+            <h2>A built-in music player for study sessions, coding nights, and reset moments.</h2>
+            <p class="section-note">
+              Pick a track, hit play, and let the homepage feel a little more personal.
+            </p>
+          </div>
+
+          <div class="music-player panel" data-tilt data-music-player>
+            <div class="music-player__hero">
+              <div class="music-player__art" aria-hidden="true">
+                <span class="music-player__pulse"></span>
+                <span class="music-player__icon">♫</span>
+              </div>
+
+              <div class="music-player__copy">
+                <p class="eyebrow">Curated Playlist</p>
+                <h3 class="music-player__title">Late Night Build Mode</h3>
+                <p class="music-player__meta">Select a track from the queue to start listening.</p>
+                <div class="music-player__tags">
+                  <span>Focus</span>
+                  <span>Ambient</span>
+                  <span>Instrumental</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="music-player__controls">
+              <button
+                class="music-player__button music-player__button--primary"
+                type="button"
+                data-action="toggle-play"
+                aria-label="Play selected track"
+              >
+                Play
+              </button>
+              <button
+                class="music-player__button"
+                type="button"
+                data-action="next-track"
+                aria-label="Play next track"
+              >
+                Next Track
+              </button>
+            </div>
+
+            <label class="music-player__volume">
+              <span>Volume</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value="72"
+                aria-label="Volume"
+                data-action="volume"
+              />
+            </label>
+
+            <div class="music-player__progress" aria-hidden="true">
+              <span data-role="progress-bar"></span>
+            </div>
+
+            <div class="music-player__times">
+              <span data-role="current-time">0:00</span>
+              <span data-role="duration">0:00</span>
+            </div>
+
+            <div class="music-player__playlist" role="list" aria-label="Music playlist">
+              <button
+                class="music-track is-active"
+                type="button"
+                role="listitem"
+                data-track-index="0"
+                data-src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                data-title="Aurora Drift"
+                data-artist="SoundHelix Demo Audio"
+                data-accent="Focus Flow"
+              >
+                <span class="music-track__number">01</span>
+                <span class="music-track__info">
+                  <strong>Aurora Drift</strong>
+                  <small>SoundHelix Demo Audio</small>
+                </span>
+                <span class="music-track__tag">Focus Flow</span>
+              </button>
+
+              <button
+                class="music-track"
+                type="button"
+                role="listitem"
+                data-track-index="1"
+                data-src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+                data-title="Neon Skyline"
+                data-artist="SoundHelix Demo Audio"
+                data-accent="Creative Reset"
+              >
+                <span class="music-track__number">02</span>
+                <span class="music-track__info">
+                  <strong>Neon Skyline</strong>
+                  <small>SoundHelix Demo Audio</small>
+                </span>
+                <span class="music-track__tag">Creative Reset</span>
+              </button>
+
+              <button
+                class="music-track"
+                type="button"
+                role="listitem"
+                data-track-index="2"
+                data-src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+                data-title="Static and Stars"
+                data-artist="SoundHelix Demo Audio"
+                data-accent="Midnight Energy"
+              >
+                <span class="music-track__number">03</span>
+                <span class="music-track__info">
+                  <strong>Static and Stars</strong>
+                  <small>SoundHelix Demo Audio</small>
+                </span>
+                <span class="music-track__tag">Midnight Energy</span>
+              </button>
+            </div>
+
+            <audio preload="none" data-role="audio"></audio>
+          </div>
+        </section>
       </main>
 
       <footer class="footer">
