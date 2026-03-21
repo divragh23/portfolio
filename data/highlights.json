@@ -10,29 +10,53 @@
       "publishedAt": "2026-03-18T00:00:00Z",
       "channelTitle": "NBA",
       "watchUrl": "https://www.youtube.com/watch?v=tU6syGnXFG4",
-      "fallbackMessage": null
+      "previewSeconds": 30,
+      "fallbackMessage": null,
+      "boxScore": {
+        "date": "March 10, 2026",
+        "favorite": "LAL",
+        "favoriteScore": 120,
+        "opponent": "MIN",
+        "opponentScore": 106
+      }
     },
     {
       "key": "dodgers",
       "team": "Dodgers",
       "label": "Latest Highlights",
-      "videoId": null,
-      "title": null,
-      "publishedAt": null,
-      "channelTitle": null,
-      "watchUrl": null,
-      "fallbackMessage": "No recent highlights available yet. Add the YouTube API key secret and run the workflow to populate this card."
+      "videoId": "lwce5Zp3_Vw",
+      "title": "Los Angeles Dodgers Vs Boston Red Sox Full Game Highlights March 19, 2026 MLB Spring Training 2026",
+      "publishedAt": "2026-03-19T00:00:00Z",
+      "channelTitle": "Chuyện Ma Lúc 3 Giờ",
+      "watchUrl": "https://www.youtube.com/watch?v=lwce5Zp3_Vw",
+      "previewSeconds": 30,
+      "fallbackMessage": null,
+      "boxScore": {
+        "date": "March 10, 2026",
+        "favorite": "LAD",
+        "favoriteScore": 4,
+        "opponent": "ARI",
+        "opponentScore": 1
+      }
     },
     {
       "key": "uconn",
       "team": "UConn Men’s Basketball",
       "label": "Latest Highlights",
-      "videoId": null,
-      "title": null,
-      "publishedAt": null,
-      "channelTitle": null,
-      "watchUrl": null,
-      "fallbackMessage": "No recent highlights available yet. Add the YouTube API key secret and run the workflow to populate this card."
+      "videoId": "BvWqqM99zMk",
+      "title": "UConn vs. Villanova: Big East regular season men's basketball highlights",
+      "publishedAt": "2026-02-21T00:00:00Z",
+      "channelTitle": "March Madness",
+      "watchUrl": "https://www.youtube.com/watch?v=BvWqqM99zMk",
+      "previewSeconds": 30,
+      "fallbackMessage": null,
+      "boxScore": {
+        "date": "March 7, 2026",
+        "favorite": "UConn",
+        "favoriteScore": 62,
+        "opponent": "MARQ",
+        "opponentScore": 68
+      }
     }
   ]
 }
