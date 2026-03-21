@@ -1,0 +1,38 @@
+{
+  "updatedAt": "2026-03-21T00:00:00.000Z",
+  "items": [
+    {
+      "key": "lakers",
+      "team": "Lakers",
+      "label": "Latest Highlights",
+      "videoId": "tU6syGnXFG4",
+      "title": "LAKERS at ROCKETS | FULL GAME HIGHLIGHTS | March 18, 2026",
+      "publishedAt": "2026-03-18T00:00:00Z",
+      "channelTitle": "NBA",
+      "watchUrl": "https://www.youtube.com/watch?v=tU6syGnXFG4",
+      "fallbackMessage": null
+    },
+    {
+      "key": "dodgers",
+      "team": "Dodgers",
+      "label": "Latest Highlights",
+      "videoId": null,
+      "title": null,
+      "publishedAt": null,
+      "channelTitle": null,
+      "watchUrl": null,
+      "fallbackMessage": "No recent highlights available yet. Add the YouTube API key secret and run the workflow to populate this card."
+    },
+    {
+      "key": "uconn",
+      "team": "UConn Men’s Basketball",
+      "label": "Latest Highlights",
+      "videoId": null,
+      "title": null,
+      "publishedAt": null,
+      "channelTitle": null,
+      "watchUrl": null,
+      "fallbackMessage": "No recent highlights available yet. Add the YouTube API key secret and run the workflow to populate this card."
+    }
+  ]
+}

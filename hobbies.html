@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hobbies | Divyansh Raghuvanshi</title>
+    <meta
+      name="description"
+      content="Hobbies and interests page for Divyansh Raghuvanshi featuring basketball, the Lakers, the Dodgers, and UConn men's basketball."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="hobbies">
+    <canvas class="particles" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="index.html">
+          <span class="brand-photo">
+            <img
+              src="https://media.licdn.com/dms/image/v2/D4E03AQGl3WM9RkISmw/profile-displayphoto-scale_400_400/B4EZwLv5wbIEAg-/0/1769723633535?e=1775692800&v=beta&t=QbkpnT9vsHX9HrIciD1SesZDxvUNeXB7HerGx-6A7-g"
+              alt="Divyansh Raghuvanshi"
+            />
+          </span>
+          <span class="brand-copy">
+            <span class="brand-text">Divyansh Raghuvanshi</span>
+            <span class="brand-subtext">Student @ University of Connecticut</span>
+          </span>
+        </a>
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="hobbies.html" aria-current="page">Hobbies</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="page-hero section reveal">
+          <div class="panel page-hero-card" data-tilt>
+            <p class="eyebrow">Hobbies / Interests</p>
+            <h1>Sports, teams, and the side of me that is a little louder.</h1>
+            <p class="lede">
+              This page keeps the same design system as the rest of the portfolio, but now leans
+              into live-feeling sports energy through automatically refreshed highlight cards.
+            </p>
+          </div>
+        </section>
+
+        <section class="section card-grid reveal">
+          <article class="panel info-card" data-tilt>
+            <p class="eyebrow">What I Follow</p>
+            <h2>Three teams I always check in on.</h2>
+            <p>
+              I wanted this section to feel more alive than static artwork, so it now pulls in the
+              latest available game highlights for the teams I follow most closely.
+            </p>
+            <ul class="chip-list">
+              <li>Lakers</li>
+              <li>Dodgers</li>
+              <li>UConn Men’s Basketball</li>
+            </ul>
+          </article>
+
+          <article class="panel info-card" data-tilt>
+            <p class="eyebrow">Data Flow</p>
+            <h2>GitHub Pages friendly by design.</h2>
+            <p>
+              A scheduled workflow refreshes a local JSON file with the latest YouTube highlight
+              metadata. The front-end reads that file and renders the embedded cards without
+              exposing any private API keys in client code.
+            </p>
+          </article>
+        </section>
+
+        <section class="section reveal">
+          <div class="section-heading">
+            <p class="eyebrow">Latest Highlights</p>
+            <h2>Fresh highlight drops for the teams I keep up with most.</h2>
+            <p class="section-note">
+              If the workflow hasn’t run yet or a video isn’t available, the cards gracefully fall
+              back to a simple unavailable state.
+            </p>
+          </div>
+          <div id="highlights-grid" class="highlight-grid">
+            <article class="panel highlight-card" data-tilt>
+              <div class="highlight-card__empty">
+                <p class="eyebrow">Latest Highlights</p>
+                <h3>Loading Lakers highlights...</h3>
+                <p>Fetching the latest available video metadata.</p>
+              </div>
+            </article>
+            <article class="panel highlight-card" data-tilt>
+              <div class="highlight-card__empty">
+                <p class="eyebrow">Latest Highlights</p>
+                <h3>Loading Dodgers highlights...</h3>
+                <p>Fetching the latest available video metadata.</p>
+              </div>
+            </article>
+            <article class="panel highlight-card" data-tilt>
+              <div class="highlight-card__empty">
+                <p class="eyebrow">Latest Highlights</p>
+                <h3>Loading UConn highlights...</h3>
+                <p>Fetching the latest available video metadata.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Divyansh Raghuvanshi · Portfolio</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="js/highlights.js"></script>
+  </body>
+</html>
