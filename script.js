@@ -1,4 +1,5 @@
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const mobileViewportQuery = window.matchMedia("(max-width: 768px)");
 const siteWallpaperUrl =
   "https://uconn.edu/wp-content/uploads/2022/08/Spring_fog_20220520_0009-crop.jpg";
 const homeNavGuideDelay = 3000;
@@ -10,6 +11,10 @@ const heroFragmentGrid = {
 };
 
 let typingRunId = 0;
+
+function isMobileViewport() {
+  return mobileViewportQuery.matches;
+}
 
 function primeWallpaperImage() {
   const wallpaperImage = new Image();
@@ -225,7 +230,7 @@ function initHomeNavGuide(nav, hoverCapableQuery) {
   }
 
   function showGuide() {
-    if (dismissed) {
+    if (dismissed || !hoverCapableQuery.matches) {
       return;
     }
 
@@ -345,7 +350,7 @@ function initExpandableNav() {
 
   const hoverCapableQuery = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 981px)");
 
-  navs.forEach((nav) => {
+  navs.forEach((nav, index) => {
     const topbar = nav.closest(".topbar");
     const homeLink = nav.querySelector(".nav-home");
     const moreLinks = nav.querySelector(".nav-more");
@@ -355,16 +360,60 @@ function initExpandableNav() {
       return;
     }
 
+    const navId = nav.id || `primary-nav-${document.body?.dataset.page || "page"}-${index + 1}`;
+    nav.id = navId;
+
+    let navToggle = topbar.querySelector(".nav-toggle");
+
+    if (!navToggle) {
+      navToggle = document.createElement("button");
+      navToggle.type = "button";
+      navToggle.className = "nav-toggle";
+      navToggle.setAttribute("aria-controls", navId);
+      navToggle.setAttribute("aria-label", "Toggle navigation");
+      navToggle.innerHTML = `
+        <span class="nav-toggle__label">Menu</span>
+        <span class="nav-toggle__icon" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      `;
+      topbar.insertBefore(navToggle, nav);
+    }
+
     let compactTimeoutId = 0;
     let navCollapseTimeoutId = 0;
+    let isMobileNavOpen = false;
     const navGuide = initHomeNavGuide(nav, hoverCapableQuery);
 
     function isInteractiveNav() {
       return hoverCapableQuery.matches;
     }
 
+    function isMobileNav() {
+      return isMobileViewport();
+    }
+
     function shouldUseCompactTopbar() {
       return !isHomePage && hoverCapableQuery.matches;
+    }
+
+    function setMobileNavState(nextOpen) {
+      isMobileNavOpen = nextOpen;
+      topbar.classList.toggle("topbar--mobile-ready", isMobileNav());
+      topbar.classList.toggle("topbar--mobile-open", isMobileNav() && nextOpen);
+      nav.classList.toggle("nav--mobile-open", isMobileNav() && nextOpen);
+      navToggle.hidden = !isMobileNav();
+      navToggle.setAttribute("aria-expanded", String(isMobileNav() && nextOpen));
+      navToggle.querySelector(".nav-toggle__label").textContent = nextOpen ? "Close" : "Menu";
+
+      if (isMobileNav()) {
+        nav.setAttribute("aria-hidden", String(!nextOpen));
+        topbar.setAttribute("aria-expanded", String(nextOpen));
+      } else {
+        nav.removeAttribute("aria-hidden");
+      }
     }
 
     function setNavMeasurements() {
@@ -383,7 +432,7 @@ function initExpandableNav() {
     }
 
     function openNav() {
-      if (!isInteractiveNav() || topbar.classList.contains("topbar--compact")) {
+      if (!isInteractiveNav() || isMobileNav() || topbar.classList.contains("topbar--compact")) {
         return;
       }
 
@@ -396,7 +445,7 @@ function initExpandableNav() {
     }
 
     function closeNav() {
-      if (!isInteractiveNav()) {
+      if (!isInteractiveNav() || isMobileNav()) {
         return;
       }
 
@@ -413,6 +462,10 @@ function initExpandableNav() {
     }
 
     function expandTopbar() {
+      if (isMobileNav()) {
+        return;
+      }
+
       window.clearTimeout(compactTimeoutId);
       topbar.classList.remove("topbar--compact");
       topbar.setAttribute("aria-expanded", "true");
@@ -424,7 +477,7 @@ function initExpandableNav() {
     }
 
     function collapseTopbar() {
-      if (!shouldUseCompactTopbar()) {
+      if (isMobileNav() || !shouldUseCompactTopbar()) {
         return;
       }
 
@@ -444,15 +497,27 @@ function initExpandableNav() {
       window.clearTimeout(compactTimeoutId);
       window.clearTimeout(navCollapseTimeoutId);
       topbar.classList.remove("topbar--compact");
+      topbar.classList.remove("topbar--mobile-ready", "topbar--mobile-open");
       topbar.removeAttribute("tabindex");
       topbar.removeAttribute("aria-expanded");
-      nav.classList.remove("nav--expanded", "nav--revealed");
+      nav.classList.remove("nav--expanded", "nav--revealed", "nav--mobile-open");
+      nav.removeAttribute("aria-hidden");
     }
 
     function syncNavMode() {
       setNavMeasurements();
       navGuide.syncGuide();
       resetNav();
+
+      if (isMobileNav()) {
+        navGuide.dismissGuide();
+        setMobileNavState(isMobileNavOpen);
+        return;
+      }
+
+      navToggle.hidden = true;
+      navToggle.setAttribute("aria-expanded", "false");
+      navToggle.querySelector(".nav-toggle__label").textContent = "Menu";
 
       if (isHomePage) {
         topbar.setAttribute("aria-expanded", "true");
@@ -473,6 +538,14 @@ function initExpandableNav() {
       }, prefersReducedMotion ? 0 : 360);
     }
 
+    navToggle.addEventListener("click", () => {
+      if (!isMobileNav()) {
+        return;
+      }
+
+      setMobileNavState(!isMobileNavOpen);
+    });
+
     topbar.addEventListener("pointerenter", expandTopbar);
     topbar.addEventListener("pointerleave", collapseTopbar);
     topbar.addEventListener("focusin", expandTopbar);
@@ -484,6 +557,14 @@ function initExpandableNav() {
       }, 0);
     });
     topbar.addEventListener("keydown", (event) => {
+      if (isMobileNav()) {
+        if (event.key === "Escape" && isMobileNavOpen) {
+          setMobileNavState(false);
+          navToggle.focus();
+        }
+        return;
+      }
+
       if (!shouldUseCompactTopbar() || document.activeElement !== topbar) {
         return;
       }
@@ -505,6 +586,13 @@ function initExpandableNav() {
           closeNav();
         }
       }, 0);
+    });
+    nav.addEventListener("click", (event) => {
+      if (!isMobileNav() || !event.target.closest("a")) {
+        return;
+      }
+
+      setMobileNavState(false);
     });
 
     window.addEventListener("resize", syncNavMode);
