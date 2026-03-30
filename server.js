@@ -1,10 +1,18 @@
 const http = require("node:http");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const cors = require("cors");
 
 const rootDir = __dirname;
 const envPath = path.join(rootDir, ".env");
 const maxHostedApiBytes = 5 * 1024 * 1024;
+const maxRequestBodyBytes = 10 * 1024 * 1024;
+const allowedFrontendOrigin = "https://div23.app";
+const apiCors = cors({
+  origin: allowedFrontendOrigin,
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+});
 
 function loadEnvFile(filePath) {
   return fs
@@ -55,6 +63,19 @@ function sendText(response, statusCode, body) {
   response.end(body);
 }
 
+function runMiddleware(request, response, middleware) {
+  return new Promise((resolve, reject) => {
+    middleware(request, response, (result) => {
+      if (result instanceof Error) {
+        reject(result);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 function logPredict(level, message, details = {}) {
   const logger = console[level] || console.log;
   logger(`[api/predict] ${message}`, details);
@@ -69,7 +90,7 @@ function createRequestError(statusCode, error, details) {
   return issue;
 }
 
-async function readRequestBody(request, maxBytes = 14 * 1024 * 1024) {
+async function readRequestBody(request, maxBytes = maxRequestBodyBytes) {
   const chunks = [];
   let totalBytes = 0;
 
@@ -91,7 +112,7 @@ async function readRequestBody(request, maxBytes = 14 * 1024 * 1024) {
 }
 
 function stripDataUrlPrefix(value = "") {
-  return value.replace(/^data:[^,]+,/, "").trim();
+  return value.replace(/^data:image\/[\w.+-]+;base64,/, "").trim();
 }
 
 function sanitizeFileName(value = "") {
@@ -249,7 +270,7 @@ async function handlePredict(request, response) {
       buildPredictErrorResponse(
         500,
         "Inference unavailable.",
-        "ROBOFLOW_API_KEY is missing on the server. Add it to the local .env file."
+        "The inference service is not configured."
       )
     );
     return;
@@ -308,7 +329,7 @@ async function handlePredict(request, response) {
         buildPredictErrorResponse(
           502,
           "Inference failed.",
-          roboflowDetails || "Roboflow rejected the image payload."
+          "The server could not complete inference for this image."
         )
       );
       return;
@@ -444,6 +465,27 @@ async function startServer() {
     const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
 
     if (url.pathname === "/api/predict") {
+      try {
+        await runMiddleware(request, response, apiCors);
+      } catch (error) {
+        sendJson(response, 500, {
+          ok: false,
+          error: "CORS configuration failed.",
+          details: error.message || "Unable to initialize API CORS.",
+        });
+        return;
+      }
+
+      if (response.writableEnded) {
+        return;
+      }
+
+      if (request.method === "OPTIONS") {
+        response.writeHead(204);
+        response.end();
+        return;
+      }
+
       await handlePredict(request, response);
       return;
     }
