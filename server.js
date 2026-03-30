@@ -47,19 +47,17 @@ function loadEnvFile(filePath) {
 
 function sendJson(response, statusCode, payload) {
   const body = JSON.stringify(payload);
-  response.writeHead(statusCode, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Content-Length": Buffer.byteLength(body),
-    "Cache-Control": "no-store",
-  });
+  response.statusCode = statusCode;
+  response.setHeader("Content-Type", "application/json; charset=utf-8");
+  response.setHeader("Content-Length", Buffer.byteLength(body));
+  response.setHeader("Cache-Control", "no-store");
   response.end(body);
 }
 
 function sendText(response, statusCode, body) {
-  response.writeHead(statusCode, {
-    "Content-Type": "text/plain; charset=utf-8",
-    "Content-Length": Buffer.byteLength(body),
-  });
+  response.statusCode = statusCode;
+  response.setHeader("Content-Type", "text/plain; charset=utf-8");
+  response.setHeader("Content-Length", Buffer.byteLength(body));
   response.end(body);
 }
 
@@ -432,10 +430,9 @@ async function resolveStaticPath(urlPathname) {
 async function handleStaticRequest(request, response, pathname) {
   if (pathname === "/") {
     const fileContents = await fs.readFile(path.join(rootDir, "index.html"));
-    response.writeHead(200, {
-      "Content-Type": contentTypes[".html"],
-      "Content-Length": fileContents.length,
-    });
+    response.statusCode = 200;
+    response.setHeader("Content-Type", contentTypes[".html"]);
+    response.setHeader("Content-Length", fileContents.length);
     response.end(fileContents);
     return;
   }
@@ -450,10 +447,9 @@ async function handleStaticRequest(request, response, pathname) {
   const extension = path.extname(filePath).toLowerCase();
   const fileContents = await fs.readFile(filePath);
 
-  response.writeHead(200, {
-    "Content-Type": contentTypes[extension] || "application/octet-stream",
-    "Content-Length": fileContents.length,
-  });
+  response.statusCode = 200;
+  response.setHeader("Content-Type", contentTypes[extension] || "application/octet-stream");
+  response.setHeader("Content-Length", fileContents.length);
   response.end(fileContents);
 }
 
@@ -481,7 +477,7 @@ async function startServer() {
       }
 
       if (request.method === "OPTIONS") {
-        response.writeHead(204);
+        response.statusCode = 204;
         response.end();
         return;
       }
