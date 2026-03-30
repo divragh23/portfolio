@@ -296,6 +296,7 @@ function SiteMotionOrchestrator({ rootRef, lenisRef }) {
 
     const pageRoot = pageShell.parentElement || mountNode.ownerDocument.body;
     const scroller = document.documentElement;
+    const scrollTriggerBase = lenis ? { scroller } : {};
 
     const cleanup = [];
     const ctx = gsap.context(() => {
@@ -344,7 +345,7 @@ function SiteMotionOrchestrator({ rootRef, lenisRef }) {
         const timeline = gsap.timeline({
           defaults: { ease: "power3.out" },
           scrollTrigger: {
-            scroller,
+            ...scrollTriggerBase,
             trigger: section,
             start: isMobileViewport ? "top 88%" : "top 72%",
             once: true,
@@ -395,7 +396,7 @@ function SiteMotionOrchestrator({ rootRef, lenisRef }) {
               duration: 0.72,
               ease: "power2.out",
               scrollTrigger: {
-                scroller,
+                ...scrollTriggerBase,
                 trigger: footer,
                 start: "top bottom-=14%",
                 once: true,
@@ -459,7 +460,7 @@ function SiteMotionOrchestrator({ rootRef, lenisRef }) {
               duration: 0.82,
               ease: "power3.out",
               scrollTrigger: {
-                scroller,
+                ...scrollTriggerBase,
                 trigger: card,
                 start: isMobileViewport ? "top 90%" : "top 78%",
                 once: true,
@@ -526,7 +527,18 @@ function SiteMotionOrchestrator({ rootRef, lenisRef }) {
 
 function SiteMotionApp({ page }) {
   const reducedMotion = useReducedMotion();
-  const lenisRef = useLenisSmoothScroll(!reducedMotion);
+  const supportsSmoothDesktopScroll = useMediaQuery(
+    "(hover: hover) and (pointer: fine) and (min-width: 981px)"
+  );
+  const hasDensePageLayout = useMemo(() => {
+    const revealCount = document.querySelectorAll(".reveal").length;
+    const tiltCount = document.querySelectorAll("[data-tilt]").length;
+
+    return page === "about" || revealCount >= 4 || tiltCount >= 6;
+  }, [page]);
+  const lenisRef = useLenisSmoothScroll(
+    !reducedMotion && supportsSmoothDesktopScroll && !hasDensePageLayout
+  );
   const rootRef = useRef(null);
 
   return (
