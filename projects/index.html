@@ -15,29 +15,26 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../styles.css" />
+    <script>
+      try {
+        if (sessionStorage.getItem("portfolio-page-transition") === "1") {
+          document.documentElement.dataset.pageTransition = "enter";
+        }
+      } catch {}
+    </script>
   </head>
   <body data-page="projects" data-react-motion="true">
     <canvas class="particles" aria-hidden="true"></canvas>
     <div class="noise" aria-hidden="true"></div>
     <div class="wallpaper-layer" aria-hidden="true"></div>
 
-    <div class="page-shell">
+    <div class="page-shell page-transition-target">
       <div id="site-motion-root"></div>
-    </div>
-
-    <div class="construction-overlay" aria-hidden="true">
-      <div class="construction-overlay__card">
-        <h2>Projects are still being integrated with the site!</h2>
-        <p>Explore other pages!</p>
-        <div class="construction-overlay__actions">
-          <a class="button button-secondary" href="../about/">About</a>
-          <a class="button button-secondary" href="../hobbies/">Hobbies</a>
-          <a class="button button-secondary" href="../contact/">Contact</a>
-        </div>
-      </div>
+      <div id="projects-showcase-root"></div>
     </div>
 
     <script src="../script.js"></script>
     <script src="../js/site-motion.bundle.js"></script>
+    <script src="../js/projects-showcase.bundle.js"></script>
   </body>
 </html>

@@ -1,7 +1,11 @@
 {
   "scripts": {
     "build:home-intro": "esbuild js/homepage-intro.jsx --bundle --minify --format=iife --platform=browser --outfile=js/homepage-intro.bundle.js",
-    "build:site-motion": "esbuild js/site-motion.jsx --bundle --minify --format=iife --platform=browser --outfile=js/site-motion.bundle.js"
+    "build:site-motion": "esbuild js/site-motion.jsx --bundle --minify --format=iife --platform=browser --outfile=js/site-motion.bundle.js",
+    "build:projects-showcase": "esbuild js/projects-showcase.jsx --bundle --minify --format=iife --platform=browser --outfile=js/projects-showcase.bundle.js",
+    "build": "npm run build:home-intro && npm run build:site-motion && npm run build:projects-showcase",
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "dependencies": {
     "@studio-freight/lenis": "^1.0.42",

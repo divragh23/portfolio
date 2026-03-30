@@ -2,6 +2,7 @@ const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)
 const mobileViewportQuery = window.matchMedia("(max-width: 768px)");
 const siteWallpaperUrl =
   "https://uconn.edu/wp-content/uploads/2022/08/Spring_fog_20220520_0009-crop.jpg";
+const siteSessionStorageKey = "portfolio-site-session-loaded";
 const homeNavGuideDelay = 3000;
 const heroFragmentGrid = {
   columns: 6,
@@ -16,6 +17,20 @@ let typingRunId = 0;
 function isMobileViewport() {
   return mobileViewportQuery.matches;
 }
+
+function markSiteSessionLoaded() {
+  if (document.body?.dataset.page === "home") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(siteSessionStorageKey, "1");
+  } catch {
+    // Ignore storage failures so the rest of the site still initializes.
+  }
+}
+
+markSiteSessionLoaded();
 
 function primeWallpaperImage() {
   const wallpaperImage = new Image();
@@ -997,7 +1012,7 @@ function initParticles() {
     return;
   }
 
-  const context = canvas.getContext("2d");
+  const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
 
   if (!context) {
     return;
@@ -1006,11 +1021,17 @@ function initParticles() {
   let width = 0;
   let height = 0;
   let animationFrame = null;
+  let lastFrameTime = 0;
   let stars = [];
   let shootingStars = [];
   let particleIntroMode = document.body?.dataset.homeIntroState === "loading" ? "dormant" : "ready";
   let particleBurstStart = 0;
   const particleBurstDuration = 1650;
+  const devicePixelRatioCap = isMobileViewport() ? 1 : 1.25;
+  const renderScale = Math.min(window.devicePixelRatio || 1, devicePixelRatioCap);
+  const hardwareThreads = navigator.hardwareConcurrency || 4;
+  const reducedParticleLoad = isMobileViewport() || hardwareThreads <= 4;
+  const targetFrameDuration = reducedParticleLoad ? 1000 / 30 : 1000 / 45;
 
   function easeOutCubic(value) {
     return 1 - (1 - value) ** 3;
@@ -1030,9 +1051,17 @@ function initParticles() {
   }
 
   function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-    const density = Math.min(240, Math.max(120, Math.floor((width * height) / 9000)));
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * renderScale);
+    canvas.height = Math.round(height * renderScale);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    context.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+    const densityDivisor = reducedParticleLoad ? 14000 : 11000;
+    const densityMin = reducedParticleLoad ? 70 : 96;
+    const densityMax = reducedParticleLoad ? 140 : 180;
+    const density = Math.min(densityMax, Math.max(densityMin, Math.floor((width * height) / densityDivisor)));
 
     stars = Array.from({ length: density }, () => ({
       x: Math.random() * width,
@@ -1059,6 +1088,12 @@ function initParticles() {
   }
 
   function draw(frameTime = performance.now()) {
+    if (frameTime - lastFrameTime < targetFrameDuration) {
+      animationFrame = requestAnimationFrame(draw);
+      return;
+    }
+
+    lastFrameTime = frameTime;
     context.clearRect(0, 0, width, height);
     let fieldOpacity = particleIntroMode === "dormant" ? 0 : 1;
     let burstEnvelope = 0;

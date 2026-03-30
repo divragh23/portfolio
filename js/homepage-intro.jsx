@@ -13,6 +13,7 @@ const siteWallpaperUrl =
   "https://uconn.edu/wp-content/uploads/2022/08/Spring_fog_20220520_0009-crop.jpg";
 const homepagePreloadPages = ["about/", "projects/", "hobbies/", "contact/"];
 const homepagePreloadAssets = ["js/site-motion.bundle.js", "js/highlights.js"];
+const siteSessionStorageKey = "portfolio-site-session-loaded";
 
 const introEase = [0.16, 1, 0.3, 1];
 const settleEase = [0.22, 1, 0.36, 1];
@@ -85,6 +86,22 @@ function waitForFontsReady() {
   }
 
   return document.fonts.ready.catch(() => undefined);
+}
+
+function hasSiteSessionLoaded() {
+  try {
+    return window.sessionStorage.getItem(siteSessionStorageKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markSiteSessionLoaded() {
+  try {
+    window.sessionStorage.setItem(siteSessionStorageKey, "1");
+  } catch {
+    // Ignore storage failures so the homepage still renders.
+  }
 }
 
 function preloadImage(source) {
@@ -162,7 +179,7 @@ function getHomeRoute(route = "") {
   return route ? `${route}/` : "./";
 }
 
-function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile }) {
+function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playIntroAnimations }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const navbarTravel = reducedMotion ? 0 : isMobile ? 20 : 282;
   const navbarScale = reducedMotion ? 1 : isMobile ? 1.035 : 1.2;
@@ -199,12 +216,16 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile }) {
   return (
     <motion.header
       className={topbarClassName}
-      initial={{
-        opacity: reducedMotion ? 1 : isMobile ? 0 : 0.72,
-        y: navbarTravel,
-        scale: navbarScale,
-        filter: reducedMotion ? "blur(0px)" : isMobile ? "blur(10px)" : "blur(6px)",
-      }}
+      initial={
+        playIntroAnimations
+          ? {
+              opacity: reducedMotion ? 1 : isMobile ? 0 : 0.72,
+              y: navbarTravel,
+              scale: navbarScale,
+              filter: reducedMotion ? "blur(0px)" : isMobile ? "blur(10px)" : "blur(6px)",
+            }
+          : false
+      }
       animate={{
         opacity: 1,
         y: 0,
@@ -323,12 +344,17 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile }) {
   );
 }
 
-function HomeLiquidHeadline({ active, reducedMotion }) {
+function HomeLiquidHeadline({ active, reducedMotion, playIntroAnimations }) {
   const filterBaseId = useId().replace(/:/g, "");
   const liquidFilterId = `${filterBaseId}-liquid`;
   const [distortionProgress, setDistortionProgress] = useState(reducedMotion ? 0 : 1);
 
   useEffect(() => {
+    if (!playIntroAnimations) {
+      setDistortionProgress(0);
+      return undefined;
+    }
+
     if (!active) {
       setDistortionProgress(reducedMotion ? 0 : 1);
       return undefined;
@@ -361,7 +387,7 @@ function HomeLiquidHeadline({ active, reducedMotion }) {
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [active, reducedMotion]);
+  }, [active, playIntroAnimations, reducedMotion]);
 
   const distortionScale = reducedMotion ? 0 : 10 * distortionProgress ** 1.05;
   const turbulenceX = reducedMotion ? 0.0012 : 0.0012 + distortionProgress * 0.0048;
@@ -401,11 +427,15 @@ function HomeLiquidHeadline({ active, reducedMotion }) {
 
       <motion.h1
         className="home-liquid-title"
-        initial={{
-          opacity: reducedMotion ? 1 : 0,
-          y: reducedMotion ? 0 : 20,
-          scale: reducedMotion ? 1 : 1.05,
-        }}
+        initial={
+          playIntroAnimations
+            ? {
+                opacity: reducedMotion ? 1 : 0,
+                y: reducedMotion ? 0 : 20,
+                scale: reducedMotion ? 1 : 1.05,
+              }
+            : false
+        }
         animate={{
           opacity: 1,
           y: 0,
@@ -429,7 +459,7 @@ function HomeLiquidHeadline({ active, reducedMotion }) {
   );
 }
 
-function HomeHero({ introStage, reducedMotion, isMobile }) {
+function HomeHero({ introStage, reducedMotion, isMobile, playIntroAnimations }) {
   const shouldShowHero =
     introStage === INTRO_STAGES.heroIntro || introStage === INTRO_STAGES.ready;
   const heroLift = reducedMotion ? 0 : isMobile ? 18 : 54;
@@ -483,12 +513,16 @@ function HomeHero({ introStage, reducedMotion, isMobile }) {
           <motion.div
             key="home-liquid-hero"
             className="home-liquid-content"
-            initial={{
-              opacity: reducedMotion ? 1 : 0.72,
-              y: heroLift,
-              scale: heroScale,
-              filter: heroBlur,
-            }}
+            initial={
+              playIntroAnimations
+                ? {
+                    opacity: reducedMotion ? 1 : 0.72,
+                    y: heroLift,
+                    scale: heroScale,
+                    filter: heroBlur,
+                  }
+                : false
+            }
             animate={{
               opacity: 1,
               y: 0,
@@ -507,7 +541,15 @@ function HomeHero({ introStage, reducedMotion, isMobile }) {
           >
             <motion.p
               className="home-liquid-kicker"
-              initial={{ opacity: 0, y: reducedMotion ? 0 : isMobile ? 8 : 12, filter: "blur(6px)" }}
+              initial={
+                playIntroAnimations
+                  ? {
+                      opacity: 0,
+                      y: reducedMotion ? 0 : isMobile ? 8 : 12,
+                      filter: "blur(6px)",
+                    }
+                  : false
+              }
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{
                 duration: reducedMotion ? 0.18 : isMobile ? 0.48 : 0.66,
@@ -518,15 +560,23 @@ function HomeHero({ introStage, reducedMotion, isMobile }) {
               Data Science &amp; Engineering student at UConn
             </motion.p>
 
-            <HomeLiquidHeadline active={shouldShowHero} reducedMotion={reducedMotion} />
+            <HomeLiquidHeadline
+              active={shouldShowHero && playIntroAnimations}
+              reducedMotion={reducedMotion}
+              playIntroAnimations={playIntroAnimations}
+            />
 
             <motion.p
               className="home-liquid-support"
-              initial={{
-                opacity: 0,
-                y: reducedMotion ? 0 : isMobile ? 10 : 14,
-                filter: reducedMotion ? "blur(0px)" : isMobile ? "blur(6px)" : "blur(8px)",
-              }}
+              initial={
+                playIntroAnimations
+                  ? {
+                      opacity: 0,
+                      y: reducedMotion ? 0 : isMobile ? 10 : 14,
+                      filter: reducedMotion ? "blur(0px)" : isMobile ? "blur(6px)" : "blur(8px)",
+                    }
+                  : false
+              }
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{
                 duration: reducedMotion ? 0.18 : isMobile ? 0.54 : 0.74,
@@ -546,11 +596,19 @@ function HomeHero({ introStage, reducedMotion, isMobile }) {
   );
 }
 
-function HomeFooter({ introStage, reducedMotion }) {
+function HomeFooter({ introStage, reducedMotion, playIntroAnimations }) {
   return (
     <motion.footer
       className="footer home-footer"
-      initial={false}
+      initial={
+        playIntroAnimations
+          ? false
+          : {
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+            }
+      }
       animate={
         introStage === INTRO_STAGES.ready
           ? {
@@ -621,9 +679,12 @@ function HomeFooter({ introStage, reducedMotion }) {
 function HomeIntroPage() {
   const reducedMotion = useReducedMotion();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [introStage, setIntroStage] = useState(INTRO_STAGES.loading);
+  const [playFullIntro] = useState(() => !hasSiteSessionLoaded());
+  const [introStage, setIntroStage] = useState(() =>
+    playFullIntro ? INTRO_STAGES.loading : INTRO_STAGES.ready
+  );
   useLenisSmoothScroll(!reducedMotion && introStage === INTRO_STAGES.ready);
-  const [navbarExpanded, setNavbarExpanded] = useState(false);
+  const [navbarExpanded, setNavbarExpanded] = useState(() => !playFullIntro);
   const [loadingProgress, setLoadingProgress] = useState(0.05);
   const [loadingLabel, setLoadingLabel] = useState("Loading portfolio...");
   const [loadingReady, setLoadingReady] = useState(false);
@@ -644,6 +705,10 @@ function HomeIntroPage() {
   }
 
   useEffect(() => {
+    markSiteSessionLoaded();
+  }, []);
+
+  useEffect(() => {
     document.body.dataset.homeIntroState = introStage;
 
     return () => {
@@ -659,7 +724,7 @@ function HomeIntroPage() {
   }, []);
 
   useEffect(() => {
-    if (introStage !== INTRO_STAGES.loading) {
+    if (!playFullIntro || introStage !== INTRO_STAGES.loading) {
       return undefined;
     }
 
@@ -729,9 +794,13 @@ function HomeIntroPage() {
     return () => {
       cancelled = true;
     };
-  }, [introStage, reducedMotion]);
+  }, [introStage, playFullIntro, reducedMotion]);
 
   useEffect(() => {
+    if (!playFullIntro) {
+      return;
+    }
+
     clearQueuedTimeouts();
 
     if (introStage === INTRO_STAGES.loading) {
@@ -768,7 +837,7 @@ function HomeIntroPage() {
         setIntroStage(INTRO_STAGES.ready);
       }, reducedMotion ? 220 : isMobile ? 620 : 1120);
     }
-  }, [introStage, isMobile, loadingReady, reducedMotion]);
+  }, [introStage, isMobile, loadingReady, playFullIntro, reducedMotion]);
 
   useEffect(() => {
     if (introStage !== INTRO_STAGES.ready || enhancementsStartedRef.current) {
@@ -808,13 +877,23 @@ function HomeIntroPage() {
             navbarExpanded={navbarExpanded}
             reducedMotion={reducedMotion}
             isMobile={isMobile}
+            playIntroAnimations={playFullIntro}
           />
 
           <main>
-            <HomeHero introStage={introStage} reducedMotion={reducedMotion} isMobile={isMobile} />
+            <HomeHero
+              introStage={introStage}
+              reducedMotion={reducedMotion}
+              isMobile={isMobile}
+              playIntroAnimations={playFullIntro}
+            />
           </main>
 
-          <HomeFooter introStage={introStage} reducedMotion={reducedMotion} />
+          <HomeFooter
+            introStage={introStage}
+            reducedMotion={reducedMotion}
+            playIntroAnimations={playFullIntro}
+          />
         </div>
       ) : null}
     </>
