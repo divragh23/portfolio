@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects | Divyansh Raghuvanshi</title>
+    <meta
+      name="description"
+      content="Projects page for Divyansh Raghuvanshi featuring AI, computer vision, model iteration, and technical build work."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <script>
+      try {
+        if (sessionStorage.getItem("portfolio-page-transition") === "1") {
+          document.documentElement.dataset.pageTransition = "enter";
+        }
+      } catch {}
+    </script>
+  </head>
+  <body data-page="projects" data-react-motion="true">
+    <canvas class="particles" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="wallpaper-layer" aria-hidden="true"></div>
+
+    <div class="page-shell page-transition-target">
+      <div id="site-motion-root"></div>
+      <div id="projects-showcase-root"></div>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="../js/site-motion.bundle.js"></script>
+    <script src="../js/projects-showcase.bundle.js"></script>
+  </body>
+</html>
