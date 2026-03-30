@@ -5,6 +5,8 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-m
 const panelEase = [0.22, 1, 0.36, 1];
 const cardTransition = { duration: 0.52, ease: panelEase };
 const maxHostedApiBytes = 4.7 * 1024 * 1024;
+const API_URL = "https://octopus-app-xnkn7.ondigitalocean.app";
+const genericInferenceError = "Inference could not be completed. Please try again.";
 
 const projects = [
   {
@@ -100,22 +102,19 @@ function waitForVideoMetadata(video) {
 
     function cleanup() {
       window.clearTimeout(timeoutId);
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      video.removeEventListener("error", handleError);
+      video.onloadedmetadata = null;
+      video.onerror = null;
     }
 
-    function handleLoadedMetadata() {
+    video.onloadedmetadata = () => {
       cleanup();
       resolve();
-    }
+    };
 
-    function handleError() {
+    video.onerror = () => {
       cleanup();
       reject(new Error("Live camera is unavailable on this device/browser."));
-    }
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    video.addEventListener("error", handleError);
+    };
   });
 }
 
@@ -180,16 +179,35 @@ async function parsePredictionResponse(response) {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok || payload?.ok === false) {
-    const error = new Error(
-      payload?.details || "Inference could not be completed. Please try another image."
-    );
-
-    error.title = payload?.error || "Inference failed.";
+    const error = new Error(genericInferenceError);
+    error.title = "Inference failed.";
     error.details = payload?.details || "";
     throw error;
   }
 
   return payload;
+}
+
+async function runRemoteInference(base64Image, name = "portfolio-upload.jpg") {
+  try {
+    const response = await fetch(`${API_URL}/api/predict`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ image: base64Image, name }),
+    });
+    const data = await parsePredictionResponse(response);
+
+    if (!data.ok) {
+      throw new Error("Inference failed");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Inference error:", error);
+    throw error;
+  }
 }
 
 function normalizePredictions(items = []) {
@@ -431,20 +449,14 @@ function TrafficSignProjectContent({ project }) {
     };
   }, [isCameraVisible, predictions, previewSource]);
 
-  async function requestPrediction({ image, name, statusMessage }) {
+  async function requestPrediction({ image, name, statusMessage, analysisStatusMessage }) {
     updateStatus(statusMessage, "working");
-    const response = await fetch("/api/predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ image, name }),
-    });
+    const payload = await runRemoteInference(image, name);
 
-    updateStatus("Analyzing detections...", "working");
+    updateStatus(analysisStatusMessage || "Analyzing detections...", "working");
     await waitForNextPaint();
 
-    return parsePredictionResponse(response);
+    return payload;
   }
 
   async function runInference({ source, request, sourceLabel }) {
@@ -470,10 +482,8 @@ function TrafficSignProjectContent({ project }) {
       updateStatus("Detection complete.", nextPredictions.length ? "success" : "idle");
     } catch (error) {
       console.error("[TrafficSignProject] Inference request failed", error);
-      updateStatus(error.title || "Inference failed.", "error");
-      setErrorMessage(
-        error.message || "Inference could not be completed. Please try another image."
-      );
+      updateStatus("Inference unavailable.", "error");
+      setErrorMessage(genericInferenceError);
       setResultMessage("");
       setPredictions([]);
       setHasRunInference(false);
@@ -512,6 +522,7 @@ function TrafficSignProjectContent({ project }) {
             image: preparedImage.dataUrl,
             name: file.name,
             statusMessage: "Sending to secure inference...",
+            analysisStatusMessage: "Analyzing detections...",
           }),
       });
     } catch (error) {
@@ -626,7 +637,8 @@ function TrafficSignProjectContent({ project }) {
         requestPrediction({
           image: dataUrl,
           name: "captured-frame.jpg",
-          statusMessage: "Sending frame to secure inference...",
+          statusMessage: "Analyzing detections...",
+          analysisStatusMessage: "Analyzing detections...",
         }),
     });
   }
