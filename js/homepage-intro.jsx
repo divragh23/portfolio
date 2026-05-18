@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLenisSmoothScroll } from "./use-lenis";
 import TextPressure from "./components/TextPressure";
+import ShinyText from "./components/ShinyText";
 import { mountGalaxyBackground } from "./mount-galaxy";
 
 const INTRO_STAGES = {
@@ -245,7 +246,6 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playI
           }}
         >
           <span className="brand-text">Divyansh Raghuvanshi</span>
-          <span className="brand-subtext">Student @ University of Connecticut</span>
         </motion.a>
       </div>
 
@@ -447,7 +447,15 @@ function HomeHero({ introStage, reducedMotion, isMobile, playIntroAnimations }) 
                 ease: introEase,
               }}
             >
-              Building thoughtful systems across AI, software, and data.
+              <ShinyText
+                text="Building thoughtful systems across AI, software, and data."
+                speed={4.5}
+                delay={1.2}
+                color="rgba(219, 228, 241, 0.78)"
+                shineColor="#f8eaff"
+                spread={110}
+                disabled={reducedMotion}
+              />
             </motion.p>
           </motion.div>
         ) : (
