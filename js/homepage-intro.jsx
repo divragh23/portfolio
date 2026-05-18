@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLenisSmoothScroll } from "./use-lenis";
 import TextPressure from "./components/TextPressure";
+import { mountGalaxyBackground } from "./mount-galaxy";
 
 const INTRO_STAGES = {
   loading: "loading",
@@ -10,8 +11,6 @@ const INTRO_STAGES = {
   heroIntro: "heroIntro",
   ready: "ready",
 };
-const siteWallpaperUrl =
-  "https://uconn.edu/wp-content/uploads/2022/08/Spring_fog_20220520_0009-crop.jpg";
 const homepagePreloadPages = ["about/", "projects/", "hobbies/", "contact/"];
 const homepagePreloadAssets = ["js/site-motion.bundle.js", "js/highlights.js"];
 const siteSessionStorageKey = "portfolio-site-session-loaded";
@@ -99,27 +98,6 @@ function markSiteSessionLoaded() {
   } catch {
     // Ignore storage failures so the homepage still renders.
   }
-}
-
-function preloadImage(source) {
-  return new Promise((resolve) => {
-    const image = new Image();
-
-    function finish() {
-      image.onload = null;
-      image.onerror = null;
-      resolve();
-    }
-
-    image.onload = finish;
-    image.onerror = finish;
-    image.decoding = "async";
-    image.src = source;
-
-    if (image.complete) {
-      finish();
-    }
-  });
 }
 
 function warmFetch(target) {
@@ -393,43 +371,6 @@ function HomeHero({ introStage, reducedMotion, isMobile, playIntroAnimations }) 
   return (
     <section className="hero hero-home-liquid section">
       <div className="home-liquid-stage">
-        <div className="home-liquid-atmosphere" aria-hidden="true">
-          <motion.span
-            className="home-liquid-orb home-liquid-orb--primary"
-            animate={
-              reducedMotion
-                ? undefined
-                : {
-                    x: [0, 14, -8, 0],
-                    y: [0, -10, 6, 0],
-                    scale: [1, 1.04, 0.98, 1],
-                  }
-            }
-            transition={{
-              duration: 11.5,
-              ease: "easeInOut",
-              repeat: Infinity,
-            }}
-          />
-          <motion.span
-            className="home-liquid-orb home-liquid-orb--secondary"
-            animate={
-              reducedMotion
-                ? undefined
-                : {
-                    x: [0, -12, 10, 0],
-                    y: [0, 8, -10, 0],
-                    scale: [1, 0.98, 1.03, 1],
-                  }
-            }
-            transition={{
-              duration: 13.5,
-              ease: "easeInOut",
-              repeat: Infinity,
-            }}
-          />
-        </div>
-
       <AnimatePresence initial={false}>
         {shouldShowHero ? (
           <motion.div
@@ -665,7 +606,6 @@ function HomeIntroPage() {
             Promise.all([
               withTimeout(waitForWindowLoad(), 8000),
               withTimeout(waitForFontsReady(), 5000),
-              withTimeout(preloadImage(siteWallpaperUrl), 6000),
             ]),
         },
         {
@@ -827,3 +767,5 @@ const homeIntroRoot = document.querySelector("#home-intro-root");
 if (document.body?.dataset.page === "home" && homeIntroRoot) {
   createRoot(homeIntroRoot).render(<HomeIntroPage />);
 }
+
+mountGalaxyBackground();
