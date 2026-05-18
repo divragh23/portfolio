@@ -1,7 +1,8 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLenisSmoothScroll } from "./use-lenis";
+import TextPressure from "./components/TextPressure";
 
 const INTRO_STAGES = {
   loading: "loading",
@@ -17,10 +18,6 @@ const siteSessionStorageKey = "portfolio-site-session-loaded";
 
 const introEase = [0.16, 1, 0.3, 1];
 const settleEase = [0.22, 1, 0.36, 1];
-
-function easeOutQuint(value) {
-  return 1 - (1 - value) ** 5;
-}
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
@@ -344,118 +341,43 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playI
   );
 }
 
-function HomeLiquidHeadline({ active, reducedMotion, playIntroAnimations }) {
-  const filterBaseId = useId().replace(/:/g, "");
-  const liquidFilterId = `${filterBaseId}-liquid`;
-  const [distortionProgress, setDistortionProgress] = useState(reducedMotion ? 0 : 1);
-
-  useEffect(() => {
-    if (!playIntroAnimations) {
-      setDistortionProgress(0);
-      return undefined;
-    }
-
-    if (!active) {
-      setDistortionProgress(reducedMotion ? 0 : 1);
-      return undefined;
-    }
-
-    if (reducedMotion) {
-      setDistortionProgress(0);
-      return undefined;
-    }
-
-    let frameId = 0;
-    let startTime = 0;
-
-    function step(timestamp) {
-      if (!startTime) {
-        startTime = timestamp;
-      }
-
-      const rawProgress = Math.min(1, (timestamp - startTime) / 1080);
-      setDistortionProgress(1 - easeOutQuint(rawProgress));
-
-      if (rawProgress < 1) {
-        frameId = window.requestAnimationFrame(step);
-      }
-    }
-
-    setDistortionProgress(1);
-    frameId = window.requestAnimationFrame(step);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [active, playIntroAnimations, reducedMotion]);
-
-  const distortionScale = reducedMotion ? 0 : 10 * distortionProgress ** 1.05;
-  const turbulenceX = reducedMotion ? 0.0012 : 0.0012 + distortionProgress * 0.0048;
-  const turbulenceY = reducedMotion ? 0.0022 : 0.0022 + distortionProgress * 0.0072;
-  const titleFilter =
-    active && !reducedMotion && distortionProgress > 0.002 ? `url(#${liquidFilterId})` : undefined;
-
+function HomeLiquidHeadline({ reducedMotion, playIntroAnimations }) {
   return (
-    <div className="home-liquid-title-wrap">
-      <svg className="home-liquid-filter-defs" aria-hidden="true" focusable="false">
-        <defs>
-          <filter
-            id={liquidFilterId}
-            x="-12%"
-            y="-18%"
-            width="124%"
-            height="136%"
-            colorInterpolationFilters="sRGB"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency={`${turbulenceX} ${turbulenceY}`}
-              numOctaves="2"
-              seed="8"
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale={distortionScale}
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-
-      <motion.h1
-        className="home-liquid-title"
-        initial={
-          playIntroAnimations
-            ? {
-                opacity: reducedMotion ? 1 : 0,
-                y: reducedMotion ? 0 : 20,
-                scale: reducedMotion ? 1 : 1.05,
-              }
-            : false
-        }
-        animate={{
-          opacity: 1,
-          y: 0,
-          scale: 1,
-        }}
-        transition={{
-          duration: reducedMotion ? 0.24 : 0.96,
-          ease: settleEase,
-          delay: reducedMotion ? 0 : 0.08,
-        }}
-      >
-        <span
-          className="home-liquid-title__surface"
-          data-text="Hi! I am Div!"
-          style={{ filter: titleFilter }}
-        >
-          Hi! I am Div!
-        </span>
-      </motion.h1>
-    </div>
+    <motion.div
+      className="home-liquid-title-wrap home-liquid-title-wrap--pressure"
+      initial={
+        playIntroAnimations
+          ? {
+              opacity: reducedMotion ? 1 : 0,
+              y: reducedMotion ? 0 : 20,
+              scale: reducedMotion ? 1 : 1.05,
+            }
+          : false
+      }
+      animate={{
+        opacity: 1,
+        y: 0,
+        scale: 1,
+      }}
+      transition={{
+        duration: reducedMotion ? 0.24 : 0.96,
+        ease: settleEase,
+        delay: reducedMotion ? 0 : 0.08,
+      }}
+    >
+      <TextPressure
+        text="Hi! I am Div!"
+        flex
+        alpha={false}
+        stroke={false}
+        width
+        weight
+        italic={!reducedMotion}
+        textColor="#f7faff"
+        minFontSize={36}
+        className="home-liquid-pressure"
+      />
+    </motion.div>
   );
 }
 
