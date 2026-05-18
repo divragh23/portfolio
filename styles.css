@@ -453,11 +453,8 @@ body[data-page="home"][data-home-intro-state="loading"]::before {
   font-family: "Space Grotesk", sans-serif;
 }
 
-.brand-subtext {
-  color: var(--muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.shiny-text {
+  display: inline-block;
 }
 
 .nav {
@@ -3008,12 +3005,8 @@ body[data-react-motion="true"] .reveal.is-visible {
   }
 
   .brand-text {
-    font-size: 0.98rem;
-  }
-
-  .brand-subtext {
-    font-size: 0.64rem;
-    letter-spacing: 0.1em;
+    font-size: 1rem;
+    letter-spacing: 0.005em;
   }
 
   .section {

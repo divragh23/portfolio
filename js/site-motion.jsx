@@ -177,7 +177,6 @@ function SiteTopbar({ page }) {
           }}
         >
           <span className="brand-text">Divyansh Raghuvanshi</span>
-          <span className="brand-subtext">Student @ University of Connecticut</span>
         </motion.a>
       </div>
 
