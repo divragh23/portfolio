@@ -34,6 +34,51 @@
           </div>
         </section>
 
+        <section class="section section--lanyard reveal" aria-label="Interactive contact card">
+          <div class="lanyard-layout">
+            <div id="lanyard-root" class="lanyard-stage" aria-hidden="true"></div>
+            <article class="panel lanyard-id-card" data-tilt>
+              <div class="lanyard-id-card__head">
+                <span class="lanyard-id-card__monogram" aria-hidden="true">
+                  <span class="lanyard-id-card__monogram-text">DR</span>
+                </span>
+                <div class="lanyard-id-card__id">
+                  <p class="eyebrow">Portfolio ID</p>
+                  <h2 class="lanyard-id-card__name">Divyansh Raghuvanshi</h2>
+                  <p class="lanyard-id-card__role">Student @ University of Connecticut</p>
+                </div>
+              </div>
+              <dl class="lanyard-id-card__fields">
+                <div class="lanyard-id-card__field">
+                  <dt>Email</dt>
+                  <dd>
+                    <a
+                      class="lanyard-id-card__value"
+                      href="mailto:divyansh.raghuvanshi@uconn.edu"
+                    >
+                      divyansh.raghuvanshi@uconn.edu
+                    </a>
+                  </dd>
+                </div>
+                <div class="lanyard-id-card__field">
+                  <dt>LinkedIn</dt>
+                  <dd>
+                    <a
+                      class="lanyard-id-card__value"
+                      href="https://www.linkedin.com/in/divyansh-raghuvanshi-8b4367371/"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      linkedin.com/in/divyansh-raghuvanshi
+                    </a>
+                  </dd>
+                </div>
+              </dl>
+              <p class="lanyard-id-card__footer">DIV23.APP — DRAG THE CARD TO PLAY</p>
+            </article>
+          </div>
+        </section>
+
         <section class="section reveal">
           <div class="contact-stack">
             <article class="panel contact-card" data-tilt>
@@ -122,5 +167,6 @@
 
     <script src="../script.js"></script>
     <script src="../js/site-motion.bundle.js"></script>
+    <script src="../js/contact-lanyard.bundle.js" defer></script>
   </body>
 </html>
