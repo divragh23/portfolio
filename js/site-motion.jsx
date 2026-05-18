@@ -155,10 +155,10 @@ function SiteTopbar({ page }) {
           rel="noreferrer"
           aria-label="Visit Divyansh Raghuvanshi's LinkedIn profile"
         >
-          <img
-            src="https://media.licdn.com/dms/image/v2/D4E03AQGl3WM9RkISmw/profile-displayphoto-scale_400_400/B4EZwLv5wbIEAg-/0/1769723633535?e=1775692800&v=beta&t=QbkpnT9vsHX9HrIciD1SesZDxvUNeXB7HerGx-6A7-g"
-            alt="Divyansh Raghuvanshi"
-          />
+          <span className="brand-monogram" aria-hidden="true">
+            <span className="brand-monogram__text">DR</span>
+          </span>
+          <span className="visually-hidden">Divyansh Raghuvanshi</span>
         </a>
 
         <motion.a
