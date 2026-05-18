@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLenisSmoothScroll } from "./use-lenis";
 import { mountGalaxyBackground } from "./mount-galaxy";
+import { mountTargetCursor } from "./mount-target-cursor";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -557,3 +558,4 @@ if (siteMotionRoot && page && page !== "home") {
 }
 
 mountGalaxyBackground();
+mountTargetCursor();

@@ -5,6 +5,7 @@ import { useLenisSmoothScroll } from "./use-lenis";
 import TextPressure from "./components/TextPressure";
 import ShinyText from "./components/ShinyText";
 import { mountGalaxyBackground } from "./mount-galaxy";
+import { mountTargetCursor } from "./mount-target-cursor";
 
 const INTRO_STAGES = {
   loading: "loading",
@@ -777,3 +778,4 @@ if (document.body?.dataset.page === "home" && homeIntroRoot) {
 }
 
 mountGalaxyBackground();
+mountTargetCursor();
