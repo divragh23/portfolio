@@ -1,7 +1,5 @@
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const mobileViewportQuery = window.matchMedia("(max-width: 768px)");
-const siteWallpaperUrl =
-  "https://uconn.edu/wp-content/uploads/2022/08/Spring_fog_20220520_0009-crop.jpg";
 const siteSessionStorageKey = "portfolio-site-session-loaded";
 const homeNavGuideDelay = 3000;
 const heroFragmentGrid = {
@@ -31,18 +29,6 @@ function markSiteSessionLoaded() {
 }
 
 markSiteSessionLoaded();
-
-function primeWallpaperImage() {
-  const wallpaperImage = new Image();
-  wallpaperImage.decoding = "async";
-  wallpaperImage.src = siteWallpaperUrl;
-}
-
-function initWallpaper() {
-  if (document.body?.dataset.page === "home") {
-    primeWallpaperImage();
-  }
-}
 
 function initViewportBezel() {
   if (!document.body || document.querySelector(".bottom-bend, .viewport-bezel")) {
@@ -1000,205 +986,6 @@ function initHomePageEnhancements(options = {}) {
 
 window.initHomePageEnhancements = initHomePageEnhancements;
 
-function initParticles() {
-  const canvas = document.querySelector(".particles");
-
-  if (!canvas) {
-    return;
-  }
-
-  if (document.body?.dataset.page !== "home") {
-    canvas.setAttribute("aria-hidden", "true");
-    return;
-  }
-
-  const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
-
-  if (!context) {
-    return;
-  }
-
-  let width = 0;
-  let height = 0;
-  let animationFrame = null;
-  let lastFrameTime = 0;
-  let stars = [];
-  let shootingStars = [];
-  let particleIntroMode = document.body?.dataset.homeIntroState === "loading" ? "dormant" : "ready";
-  let particleBurstStart = 0;
-  const particleBurstDuration = 1650;
-  const devicePixelRatioCap = isMobileViewport() ? 1 : 1.25;
-  const renderScale = Math.min(window.devicePixelRatio || 1, devicePixelRatioCap);
-  const hardwareThreads = navigator.hardwareConcurrency || 4;
-  const reducedParticleLoad = isMobileViewport() || hardwareThreads <= 4;
-  const targetFrameDuration = reducedParticleLoad ? 1000 / 30 : 1000 / 45;
-
-  function easeOutCubic(value) {
-    return 1 - (1 - value) ** 3;
-  }
-
-  function triggerParticleBurst() {
-    if (prefersReducedMotion || particleIntroMode === "burst") {
-      return;
-    }
-
-    particleIntroMode = "burst";
-    particleBurstStart = performance.now();
-
-    for (let index = 0; index < 3; index += 1) {
-      spawnShootingStar(true);
-    }
-  }
-
-  function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = Math.round(width * renderScale);
-    canvas.height = Math.round(height * renderScale);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    context.setTransform(renderScale, 0, 0, renderScale, 0, 0);
-    const densityDivisor = reducedParticleLoad ? 14000 : 11000;
-    const densityMin = reducedParticleLoad ? 70 : 96;
-    const densityMax = reducedParticleLoad ? 140 : 180;
-    const density = Math.min(densityMax, Math.max(densityMin, Math.floor((width * height) / densityDivisor)));
-
-    stars = Array.from({ length: density }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      radius: Math.random() * 1.5 + 0.25,
-      alpha: Math.random() * 0.48 + 0.12,
-      drift: Math.random() * 0.16 + 0.02,
-      twinkle: Math.random() * Math.PI * 2,
-      twinkleSpeed: Math.random() * 0.02 + 0.006,
-      burstBias: Math.random() * 0.8 + 0.6,
-    }));
-  }
-
-  function spawnShootingStar(isBurst = false) {
-    shootingStars.push({
-      x: isBurst ? width * (0.24 + Math.random() * 0.52) : Math.random() * width * 0.9,
-      y: isBurst ? height * (0.14 + Math.random() * 0.28) : Math.random() * height * 0.45,
-      vx: isBurst ? Math.random() * 10 + 16 : Math.random() * 8 + 10,
-      vy: isBurst ? Math.random() * 3.2 + 2.8 : Math.random() * 2.4 + 2.2,
-      length: isBurst ? Math.random() * 140 + 120 : Math.random() * 120 + 90,
-      life: 1,
-      decay: isBurst ? Math.random() * 0.01 + 0.006 : Math.random() * 0.012 + 0.008,
-    });
-  }
-
-  function draw(frameTime = performance.now()) {
-    if (frameTime - lastFrameTime < targetFrameDuration) {
-      animationFrame = requestAnimationFrame(draw);
-      return;
-    }
-
-    lastFrameTime = frameTime;
-    context.clearRect(0, 0, width, height);
-    let fieldOpacity = particleIntroMode === "dormant" ? 0 : 1;
-    let burstEnvelope = 0;
-    let driftMultiplier = 1;
-    let shootingStarChance = 0.018;
-    let shootingStarCap = 3;
-
-    if (particleIntroMode === "burst") {
-      const burstProgress = Math.min(1, (frameTime - particleBurstStart) / particleBurstDuration);
-      const easedProgress = easeOutCubic(burstProgress);
-
-      fieldOpacity = easedProgress;
-      burstEnvelope = Math.sin(Math.PI * burstProgress) * (1 - burstProgress * 0.18);
-      driftMultiplier = 1 + burstEnvelope * 1.45;
-      shootingStarChance = 0.065;
-      shootingStarCap = 7;
-
-      if (burstProgress >= 1) {
-        particleIntroMode = "ready";
-      }
-    }
-
-    stars.forEach((star) => {
-      star.y -= star.drift * driftMultiplier;
-      star.twinkle += star.twinkleSpeed * (1 + burstEnvelope * 1.8);
-
-      if (star.y < -4) {
-        star.y = height + 4;
-        star.x = Math.random() * width;
-      }
-
-      const offsetFromCenterX = star.x - width / 2;
-      const offsetFromCenterY = star.y - height / 2;
-      const distance = Math.max(1, Math.hypot(offsetFromCenterX, offsetFromCenterY));
-      const unitX = offsetFromCenterX / distance;
-      const unitY = offsetFromCenterY / distance;
-      const burstOffset = burstEnvelope * (14 + star.burstBias * 42);
-      const drawX = star.x + unitX * burstOffset;
-      const drawY = star.y + unitY * burstOffset;
-      const drawRadius = star.radius * (1 + burstEnvelope * 1.4);
-      const drawAlpha =
-        (star.alpha + Math.sin(star.twinkle) * 0.08 + burstEnvelope * 0.1) * fieldOpacity;
-
-      context.beginPath();
-      context.fillStyle = `rgba(245, 238, 255, ${Math.max(0, drawAlpha)})`;
-      context.arc(drawX, drawY, drawRadius, 0, Math.PI * 2);
-      context.fill();
-    });
-
-    if (fieldOpacity > 0 && Math.random() < shootingStarChance && shootingStars.length < shootingStarCap) {
-      spawnShootingStar(particleIntroMode === "burst");
-    }
-
-    shootingStars = shootingStars.filter((star) => star.life > 0);
-
-    shootingStars.forEach((star) => {
-      const gradient = context.createLinearGradient(
-        star.x,
-        star.y,
-        star.x - star.length,
-        star.y - star.length * 0.24
-      );
-
-      gradient.addColorStop(0, `rgba(255, 244, 250, ${star.life * Math.max(fieldOpacity, 0.24)})`);
-      gradient.addColorStop(1, "rgba(255, 244, 250, 0)");
-
-      context.beginPath();
-      context.strokeStyle = gradient;
-      context.lineWidth = 1.8;
-      context.moveTo(star.x, star.y);
-      context.lineTo(star.x - star.length, star.y - star.length * 0.24);
-      context.stroke();
-
-      star.x += star.vx;
-      star.y += star.vy;
-      star.life -= star.decay;
-    });
-
-    animationFrame = requestAnimationFrame(draw);
-  }
-
-    resize();
-    window.addEventListener("homepage:intro-particle-burst", triggerParticleBurst);
-
-  if (!prefersReducedMotion) {
-    draw();
-    window.addEventListener("resize", resize);
-  } else {
-    stars.forEach((star) => {
-      context.beginPath();
-      context.fillStyle = `rgba(232, 240, 255, ${star.alpha})`;
-      context.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-      context.fill();
-    });
-  }
-
-  window.addEventListener("beforeunload", () => {
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
-    }
-
-    window.removeEventListener("homepage:intro-particle-burst", triggerParticleBurst);
-  });
-}
-
 function buildLinescoreTable(score) {
   const columns = score.columns
     .map((column) => `<th scope="col">${column}</th>`)
@@ -1269,7 +1056,6 @@ function initScoreboard() {
 }
 
 initViewportBezel();
-initWallpaper();
 if (!usesReactSiteMotion) {
   initReveal();
 }
@@ -1280,4 +1066,3 @@ if (!usesReactSiteMotion) {
   initExpandableNav();
 }
 initTilt();
-initParticles();

@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLenisSmoothScroll } from "./use-lenis";
+import { mountGalaxyBackground } from "./mount-galaxy";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -555,3 +556,5 @@ const page = document.body?.dataset.page;
 if (siteMotionRoot && page && page !== "home") {
   createRoot(siteMotionRoot).render(<SiteMotionApp page={page} />);
 }
+
+mountGalaxyBackground();
