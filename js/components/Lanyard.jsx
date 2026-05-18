@@ -2,14 +2,21 @@
 // Component sourced from https://reactbits.dev (Lanyard).
 // Adapted for the portfolio:
 //   - Asset URLs are absolute paths (no esbuild file-loader plumbing).
-//   - The card's base material is overridden at runtime with a CanvasTexture
-//     showing the user's brand monogram, name, email, and LinkedIn handle.
-//   - The lanyard band texture is also generated via Canvas in the brand palette
+//   - The card face uses a UConn Huskies mark texture instead of the GLB's
+//     default React branding (see assets/lanyard/uconn-husky.png).
+//   - The lanyard band texture is generated via Canvas in the brand palette
 //     instead of using the React-Bits-branded PNG.
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Canvas, extend, useFrame } from "@react-three/fiber";
-import { useGLTF, Environment, Lightformer } from "@react-three/drei";
+import { useGLTF, Environment, Lightformer, useTexture } from "@react-three/drei";
 import {
   BallCollider,
   CuboidCollider,
@@ -24,6 +31,7 @@ import * as THREE from "three";
 extend({ MeshLineGeometry, MeshLineMaterial });
 
 const CARD_URL = "/assets/lanyard/card.glb";
+const CARD_FACE_MAP_URL = "/assets/lanyard/uconn-husky.png";
 
 function createBandTexture({ width = 1024, height = 128 } = {}) {
   if (typeof document === "undefined") return null;
@@ -88,6 +96,14 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }) {
   };
 
   const { nodes, materials } = useGLTF(CARD_URL);
+  const cardFaceMap = useTexture(CARD_FACE_MAP_URL);
+
+  useLayoutEffect(() => {
+    cardFaceMap.colorSpace = THREE.SRGBColorSpace;
+    cardFaceMap.flipY = false;
+    cardFaceMap.anisotropy = 16;
+    cardFaceMap.needsUpdate = true;
+  }, [cardFaceMap]);
 
   const bandTexture = useMemo(() => createBandTexture(), []);
 
@@ -213,12 +229,12 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }) {
           >
             <mesh geometry={nodes.card.geometry}>
               <meshPhysicalMaterial
-                map={materials.base.map}
+                map={cardFaceMap}
                 map-anisotropy={16}
                 clearcoat={isMobile ? 0 : 1}
                 clearcoatRoughness={0.15}
-                roughness={0.9}
-                metalness={0.8}
+                roughness={0.65}
+                metalness={0.25}
               />
             </mesh>
             <mesh
@@ -274,7 +290,9 @@ export default function Lanyard({
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} />
+          <Suspense fallback={null}>
+            <Band isMobile={isMobile} />
+          </Suspense>
         </Physics>
         <Environment blur={0.75}>
           <Lightformer
@@ -312,3 +330,4 @@ export default function Lanyard({
 }
 
 useGLTF.preload(CARD_URL);
+useTexture.preload(CARD_FACE_MAP_URL);
