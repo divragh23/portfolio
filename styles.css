@@ -153,57 +153,73 @@ body[data-page="home"] .home-page-shell {
   padding-top: 4.5rem;
 }
 
-/* ---- InfiniteMenu nav sphere ---- */
+/* ---- InfiniteMenu nav sphere ----
+   The sphere lives in document flow at the top of the home hero. No card,
+   no border, no backdrop blur — the canvas itself is transparent so the
+   galaxy background shows through and the menu reads as part of the page.
+*/
 
 .infinite-nav {
-  position: fixed;
-  top: 0.9rem;
-  right: 0.9rem;
-  width: clamp(180px, 22vw, 280px);
-  height: clamp(180px, 22vw, 280px);
-  z-index: 13;
+  /* `--menu-height` is the only knob that controls the canvas size on
+     desktop / tablet; mobile is overridden in the media query below.
+     We keep the canvas square-ish in aspect so the sphere isn't squished. */
+  --menu-height: clamp(280px, 42vh, 440px);
+  position: relative;
+  width: 100%;
+  max-width: var(--shell-width);
+  margin: 0 auto;
+  height: var(--menu-height);
+  z-index: 2;
   pointer-events: auto;
-  border-radius: 28px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    rgba(8, 6, 18, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 24px 56px rgba(0, 0, 0, 0.35),
-    0 0 32px rgba(214, 196, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  isolation: isolate;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  overflow: visible;
+}
+
+.infinite-nav.infinite-nav--inline {
+  /* Pull the menu close to the top of the home shell and leave a small
+     breathing band before the hero text begins. */
+  margin-top: clamp(0.5rem, 2vh, 1.6rem);
+  margin-bottom: clamp(0.6rem, 2vh, 1.4rem);
 }
 
 .infinite-nav--fallback {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.6rem 0.9rem;
-  width: auto;
+  padding: 0.65rem 1rem;
   height: auto;
+  margin: 1.25rem auto;
+  width: auto;
+  max-width: min(640px, calc(100% - 2rem));
   border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.12);
   font-family: "Space Grotesk", sans-serif;
+  z-index: 2;
 }
 
 .infinite-nav--fallback a {
   color: var(--accent-strong);
   text-decoration: none;
-  font-size: 0.92rem;
-  padding: 0.35rem 0.7rem;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.85rem;
   border-radius: 999px;
 }
 
 .infinite-nav--fallback a:hover,
 .infinite-nav--fallback a:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   outline: none;
 }
 
-/* ---- InfiniteMenu component styles (from React Bits, scoped to .infinite-nav) ---- */
+/* ---- Canvas + active-item overlays ---- */
 
 .infinite-nav #infinite-grid-menu-canvas {
   cursor: grab;
@@ -214,98 +230,166 @@ body[data-page="home"] .home-page-shell {
   outline: none;
   display: block;
   background: transparent;
+  touch-action: none;
 }
 
 .infinite-nav #infinite-grid-menu-canvas:active {
   cursor: grabbing;
 }
 
-.infinite-nav .face-title,
-.infinite-nav .face-description {
-  /* The portfolio widget is small, so the original face title overlay
-     would be cropped. Hide it and rely on the disc art (canvas text) +
-     the action button label instead. */
-  display: none;
+/* Bigger, on-brand title + description that orbit the sphere. The
+   original React Bits CSS hides them under 1500px because the corner
+   widget is too narrow — we render them whenever there is horizontal
+   room (>900px) since the inline menu now spans most of the shell. */
+.infinite-nav .face-title {
+  user-select: none;
+  position: absolute;
+  top: 50%;
+  left: clamp(0.5rem, 5vw, 2.5rem);
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--accent-strong);
+  text-shadow: 0 8px 24px rgba(8, 6, 18, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-12px, -50%);
+  transition:
+    opacity 480ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 480ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.infinite-nav .face-title.active {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.infinite-nav .face-title.inactive {
+  opacity: 0;
+  transform: translate(-12px, -50%);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.infinite-nav .face-description {
+  user-select: none;
+  position: absolute;
+  top: 50%;
+  right: clamp(0.5rem, 5vw, 2.5rem);
+  max-width: 18ch;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  font-size: clamp(0.92rem, 1.1vw, 1.05rem);
+  line-height: 1.45;
+  color: var(--muted);
+  text-align: right;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(12px, -50%);
+  transition:
+    opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.infinite-nav .face-description.active {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.infinite-nav .face-description.inactive {
+  opacity: 0;
+  transform: translate(12px, -50%);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+/* Action button — brand-coloured pill that confirms the current section. */
 .infinite-nav .action-button {
   position: absolute;
   left: 50%;
-  bottom: 0.6rem;
-  z-index: 10;
-  width: 38px;
-  height: 38px;
+  bottom: clamp(0.35rem, 2vh, 1rem);
+  z-index: 5;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   padding: 0;
   background: linear-gradient(180deg, #f8c2e5, #c7d9ff);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 50%;
   cursor: pointer;
   color: #1c1530;
   box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  transform: translateX(-50%) scale(0);
+    0 14px 32px rgba(0, 0, 0, 0.4),
+    0 0 24px rgba(248, 194, 229, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translate(-50%, 30px) scale(0.6);
   opacity: 0;
   pointer-events: none;
   transition:
-    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 240ms ease;
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 280ms ease,
+    box-shadow 240ms ease;
 }
 
 .infinite-nav .action-button:hover {
   background: linear-gradient(180deg, #ffe3f1, #dab7ff);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.45),
+    0 0 32px rgba(248, 194, 229, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .infinite-nav .action-button:focus-visible {
   outline: 2px solid #fff;
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
 .infinite-nav .action-button.active {
-  transform: translateX(-50%) scale(1);
+  transform: translate(-50%, 0) scale(1);
   opacity: 1;
   pointer-events: auto;
 }
 
 .infinite-nav .action-button.inactive {
-  transform: translateX(-50%) scale(0);
+  transform: translate(-50%, 30px) scale(0.6);
   opacity: 0;
   pointer-events: none;
 }
 
 .infinite-nav .action-button-icon {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
   font-weight: 700;
   margin: 0;
   user-select: none;
 }
 
-@media (max-width: 640px) {
-  .infinite-nav {
-    top: 0.6rem;
-    right: 0.6rem;
-    width: clamp(150px, 38vw, 200px);
-    height: clamp(150px, 38vw, 200px);
-    border-radius: 22px;
-  }
-
-  .infinite-nav .action-button {
-    width: 34px;
-    height: 34px;
+@media (max-width: 900px) {
+  .infinite-nav .face-title,
+  .infinite-nav .face-description {
+    display: none;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (max-width: 640px) {
   .infinite-nav {
-    /* The fallback link list is rendered instead; its smaller pill shape
-       does not need the canvas-sized container. */
-    width: auto;
-    height: auto;
-    top: 0.7rem;
-    right: 0.7rem;
+    --menu-height: clamp(240px, 48vh, 340px);
+  }
+
+  .infinite-nav.infinite-nav--inline {
+    margin-top: 0.35rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .infinite-nav .action-button {
+    width: 42px;
+    height: 42px;
   }
 }
 
@@ -1183,14 +1267,19 @@ body[data-page="home"] .topbar--intro-compact .nav::before {
 .home-page-shell > main {
   flex: 1;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .hero-home-liquid {
   position: relative;
   flex: 1;
-  min-height: calc(100vh - 10.75rem);
-  padding-top: clamp(1.4rem, 4vw, 3rem);
-  padding-bottom: clamp(2.25rem, 6vw, 4rem);
+  /* The InfiniteMenu now sits above the hero in flow and already takes
+     ~40vh — shrink the hero's min-height so the menu + hero fit together
+     in the first viewport. */
+  min-height: clamp(280px, 48vh, 520px);
+  padding-top: clamp(0.6rem, 2vw, 1.6rem);
+  padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
 .home-liquid-stage {

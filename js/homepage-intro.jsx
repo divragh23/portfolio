@@ -222,6 +222,10 @@ function detectWebgl2() {
   }
 }
 
+// The InfiniteMenu lives in document flow at the top of the home hero so
+// it reads as part of the page (no glassy card wrapping it). The brand
+// pill stays fixed in the top-left of the viewport for identity, but the
+// 3D menu itself is integrated into the hero canvas.
 function InfiniteNavMenu({ introStage, reducedMotion, isMobile, playIntroAnimations }) {
   const [webglFailed, setWebglFailed] = useState(false);
   const webgl2Supported = useMemo(() => detectWebgl2(), []);
@@ -240,7 +244,7 @@ function InfiniteNavMenu({ introStage, reducedMotion, isMobile, playIntroAnimati
 
   // Accessibility fallback: if the user prefers reduced motion, WebGL2 is
   // unavailable, or the sphere blew up at init time, we render a plain
-  // list of anchor links so the navbar still works.
+  // row of anchor links so the navbar still works.
   if (shouldUseFallback) {
     return (
       <nav
@@ -267,39 +271,38 @@ function InfiniteNavMenu({ introStage, reducedMotion, isMobile, playIntroAnimati
   };
 
   return (
-    <motion.aside
-      className="infinite-nav"
+    <motion.div
+      className="infinite-nav infinite-nav--inline"
       aria-label="Portfolio navigation sphere"
+      role="navigation"
       initial={
         playIntroAnimations
           ? {
               opacity: 0,
               y: lift,
-              scale: 0.92,
-              filter: "blur(6px)",
+              scale: 0.96,
             }
           : false
       }
       animate={{
         opacity: introFinished ? 1 : 0,
         y: introFinished ? 0 : lift,
-        scale: introFinished ? 1 : 0.96,
-        filter: introFinished ? "blur(0px)" : "blur(4px)",
+        scale: introFinished ? 1 : 0.98,
       }}
       transition={{
-        duration: reducedMotion ? 0.2 : 0.74,
+        duration: reducedMotion ? 0.2 : 0.78,
         ease: introEase,
       }}
       style={{ pointerEvents: introFinished ? "auto" : "none" }}
     >
       <InfiniteMenu
         items={items}
-        scale={isMobile ? 1.1 : 0.95}
+        scale={isMobile ? 1.05 : 0.9}
         onSelect={handleSelect}
         autoStart={introFinished}
         onError={() => setWebglFailed(true)}
       />
-    </motion.aside>
+    </motion.div>
   );
 }
 
@@ -738,14 +741,14 @@ function HomeIntroPage() {
             playIntroAnimations={playFullIntro}
           />
 
-          <InfiniteNavMenu
-            introStage={introStage}
-            reducedMotion={reducedMotion}
-            isMobile={isMobile}
-            playIntroAnimations={playFullIntro}
-          />
-
           <main id="home" data-section="home">
+            <InfiniteNavMenu
+              introStage={introStage}
+              reducedMotion={reducedMotion}
+              isMobile={isMobile}
+              playIntroAnimations={playFullIntro}
+            />
+
             <HomeHero
               introStage={introStage}
               reducedMotion={reducedMotion}
