@@ -894,6 +894,6 @@ function ProjectsApp() {
 
 const projectsRoot = document.querySelector("#projects-showcase-root");
 
-if (document.body?.dataset.page === "projects" && projectsRoot) {
+if (projectsRoot) {
   createRoot(projectsRoot).render(<ProjectsApp />);
 }

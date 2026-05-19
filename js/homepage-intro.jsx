@@ -317,14 +317,15 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playI
           ease: introEase,
         }}
       >
-        <a className="nav-home" href={getHomeRoute()} aria-current="page">
+        <a className="nav-home" href="#home" data-scroll-to="home" aria-current="page">
           Home
         </a>
         <div className="nav-more">
-          <a href={getHomeRoute("about")}>About</a>
-          <a href={getHomeRoute("projects")}>Projects</a>
-          <a href={getHomeRoute("hobbies")}>Hobbies</a>
-          <a href={getHomeRoute("contact")}>Contact</a>
+          <a href="#about" data-scroll-to="about">About</a>
+          <a href="#experience" data-scroll-to="experience">Experience</a>
+          <a href="#projects" data-scroll-to="projects">Projects</a>
+          <a href="#hobbies" data-scroll-to="hobbies">Hobbies</a>
+          <a href="#contact" data-scroll-to="contact">Contact</a>
         </div>
       </motion.nav>
     </motion.header>
@@ -753,7 +754,7 @@ function HomeIntroPage() {
       </AnimatePresence>
 
       {introStage !== INTRO_STAGES.loading ? (
-        <motion.div className="page-shell home-page-shell page-transition-target">
+        <motion.div className="page-shell home-page-shell">
           <HomeNavbar
             introStage={introStage}
             navbarExpanded={navbarExpanded}
@@ -762,7 +763,7 @@ function HomeIntroPage() {
             playIntroAnimations={playFullIntro}
           />
 
-          <main>
+          <main id="home" data-section="home">
             <HomeHero
               introStage={introStage}
               reducedMotion={reducedMotion}
@@ -770,12 +771,6 @@ function HomeIntroPage() {
               playIntroAnimations={playFullIntro}
             />
           </main>
-
-          <HomeFooter
-            introStage={introStage}
-            reducedMotion={reducedMotion}
-            playIntroAnimations={playFullIntro}
-          />
         </motion.div>
       ) : null}
     </>
