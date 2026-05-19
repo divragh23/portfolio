@@ -9,7 +9,7 @@
 //     an external URL.
 //   - Click + tap on the action button are both handled.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { mat4, quat, vec2, vec3 } from "gl-matrix";
 
 const discVertShaderSource = `#version 300 es
@@ -623,6 +623,10 @@ class InfiniteGridMenu {
       aInstanceMatrix: 3,
     });
 
+    if (!this.discProgram) {
+      throw new Error("InfiniteMenu: WebGL2 shader program failed to link");
+    }
+
     this.discLocations = {
       aModelPosition: gl.getAttribLocation(this.discProgram, "aModelPosition"),
       aModelUvs: gl.getAttribLocation(this.discProgram, "aModelUvs"),
@@ -893,15 +897,32 @@ const defaultItems = [
   },
 ];
 
-export default function InfiniteMenu({ items = [], scale = 1.0, onSelect, autoStart = true }) {
+export default function InfiniteMenu({
+  items = [],
+  scale = 1.0,
+  onSelect,
+  autoStart = true,
+  onError,
+}) {
   const canvasRef = useRef(null);
   const sketchRef = useRef(null);
+  const onErrorRef = useRef(onError);
   const [activeItem, setActiveItem] = useState(null);
   const [isMoving, setIsMoving] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  // Keep onError in a ref so changes to the host's inline callback don't
+  // re-trigger the heavy WebGL init effect (which previously created a
+  // re-render loop when the host updated `webglFailed` state in response
+  // to the very same error).
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const resolvedItems = useMemo(() => (items.length ? items : defaultItems), [items]);
 
   useEffect(() => {
+    if (failed) return undefined;
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
@@ -924,7 +945,10 @@ export default function InfiniteMenu({ items = [], scale = 1.0, onSelect, autoSt
       );
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error("InfiniteMenu init failed", error);
+      console.warn("InfiniteMenu: falling back to static nav", error?.message || error);
+      setFailed(true);
+      const cb = onErrorRef.current;
+      if (typeof cb === "function") cb(error);
       return undefined;
     }
 
@@ -939,7 +963,13 @@ export default function InfiniteMenu({ items = [], scale = 1.0, onSelect, autoSt
       sketch?.dispose();
       sketchRef.current = null;
     };
-  }, [resolvedItems, scale, autoStart]);
+  }, [resolvedItems, scale, autoStart, failed]);
+
+  if (failed) {
+    // Surface a null so the host can render its own fallback (the nav-pill
+    // link list) instead of leaving an empty WebGL canvas sitting there.
+    return null;
+  }
 
   const handleButtonClick = (event) => {
     if (!activeItem) return;
