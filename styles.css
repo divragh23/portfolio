@@ -108,22 +108,205 @@ html {
   scroll-padding-top: 96px;
 }
 
-/* Pin the topbar to the viewport so it remains in view across every section.
-   The original `position: sticky` was constrained by the `home-page-shell`
-   containing block, which is only ~100vh tall now that we render the
-   scrollable sections below it. */
-body[data-page="home"] .topbar {
+/* Brand-only topbar (LinkedIn photo pill) lives in the top-left corner; the
+   InfiniteMenu sphere lives top-right. Both are position:fixed so they
+   remain visible across every scrolling section. */
+body[data-page="home"] .topbar.topbar--brand-only {
   position: fixed;
-  top: 1rem;
-  left: 0;
-  right: 0;
-  width: var(--shell-width);
-  max-width: var(--shell-width);
-  margin: 0 auto;
+  top: 1.1rem;
+  left: 1.25rem;
+  right: auto;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: 12;
+}
+
+body[data-page="home"] .topbar.topbar--brand-only .brand-photo {
+  width: 3.05rem;
+  height: 3.05rem;
+}
+
+@media (max-width: 640px) {
+  body[data-page="home"] .topbar.topbar--brand-only {
+    top: 0.75rem;
+    left: 0.75rem;
+  }
+
+  body[data-page="home"] .topbar.topbar--brand-only .brand-photo {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
 }
 
 body[data-page="home"] .home-page-shell {
-  padding-top: 5.5rem;
+  padding-top: 4.5rem;
+}
+
+/* ---- InfiniteMenu nav sphere ---- */
+
+.infinite-nav {
+  position: fixed;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: clamp(180px, 22vw, 280px);
+  height: clamp(180px, 22vw, 280px);
+  z-index: 13;
+  pointer-events: auto;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(8, 6, 18, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.35),
+    0 0 32px rgba(214, 196, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.infinite-nav--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  width: auto;
+  height: auto;
+  border-radius: 999px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.infinite-nav--fallback a {
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-size: 0.92rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+}
+
+.infinite-nav--fallback a:hover,
+.infinite-nav--fallback a:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+/* ---- InfiniteMenu component styles (from React Bits, scoped to .infinite-nav) ---- */
+
+.infinite-nav #infinite-grid-menu-canvas {
+  cursor: grab;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  outline: none;
+  display: block;
+  background: transparent;
+}
+
+.infinite-nav #infinite-grid-menu-canvas:active {
+  cursor: grabbing;
+}
+
+.infinite-nav .face-title,
+.infinite-nav .face-description {
+  /* The portfolio widget is small, so the original face title overlay
+     would be cropped. Hide it and rely on the disc art (canvas text) +
+     the action button label instead. */
+  display: none;
+}
+
+.infinite-nav .action-button {
+  position: absolute;
+  left: 50%;
+  bottom: 0.6rem;
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: linear-gradient(180deg, #f8c2e5, #c7d9ff);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  cursor: pointer;
+  color: #1c1530;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transform: translateX(-50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 240ms ease;
+}
+
+.infinite-nav .action-button:hover {
+  background: linear-gradient(180deg, #ffe3f1, #dab7ff);
+}
+
+.infinite-nav .action-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.infinite-nav .action-button.active {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.infinite-nav .action-button.inactive {
+  transform: translateX(-50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.infinite-nav .action-button-icon {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+  margin: 0;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .infinite-nav {
+    top: 0.6rem;
+    right: 0.6rem;
+    width: clamp(150px, 38vw, 200px);
+    height: clamp(150px, 38vw, 200px);
+    border-radius: 22px;
+  }
+
+  .infinite-nav .action-button {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .infinite-nav {
+    /* The fallback link list is rendered instead; its smaller pill shape
+       does not need the canvas-sized container. */
+    width: auto;
+    height: auto;
+    top: 0.7rem;
+    right: 0.7rem;
+  }
 }
 
 .site-sections {
@@ -162,213 +345,6 @@ body[data-page="home"] .home-page-shell {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-}
-
-.section--lanyard {
-  padding-top: 1rem;
-  padding-bottom: 2rem;
-}
-
-.lanyard-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  align-items: center;
-  gap: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.lanyard-stage {
-  position: relative;
-  width: 100%;
-  height: clamp(420px, 50vw, 560px);
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.lanyard-stage .lanyard-wrapper {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  transform: none;
-}
-
-.lanyard-stage canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.lanyard-id-card {
-  display: grid;
-  gap: 1.25rem;
-  padding: clamp(1.4rem, 2.4vw, 1.85rem);
-}
-
-.lanyard-id-card__head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-}
-
-.lanyard-id-card__monogram {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.6rem;
-  height: 3.6rem;
-  border-radius: 50%;
-  padding: 2px;
-  background: linear-gradient(135deg, rgba(255, 227, 241, 0.95), rgba(186, 206, 255, 0.85));
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 0 32px rgba(248, 194, 229, 0.18);
-}
-
-.lanyard-id-card__monogram::after {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 233, 245, 0.45), transparent 58%),
-    radial-gradient(circle at 75% 82%, rgba(170, 192, 255, 0.32), transparent 60%),
-    linear-gradient(155deg, #1c1730 0%, #0c0a17 70%);
-}
-
-.lanyard-id-card__monogram-text {
-  position: relative;
-  z-index: 1;
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 700;
-  font-size: 1.18rem;
-  letter-spacing: 0.06em;
-  color: #fef4fa;
-  text-transform: uppercase;
-  text-shadow: 0 1px 6px rgba(8, 8, 18, 0.55);
-}
-
-.lanyard-id-card__id {
-  display: grid;
-  gap: 0.18rem;
-  min-width: 0;
-}
-
-.lanyard-id-card__name {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(1.18rem, 2vw, 1.42rem);
-  line-height: 1.15;
-  color: #f6efff;
-}
-
-.lanyard-id-card__role {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
-  color: rgba(199, 217, 255, 0.78);
-}
-
-.lanyard-id-card__fields {
-  display: grid;
-  gap: 0.95rem;
-  margin: 0;
-  padding: 1rem;
-  border-radius: var(--radius-md);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.lanyard-id-card__field {
-  display: grid;
-  gap: 0.18rem;
-}
-
-.lanyard-id-card__field dt {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(180, 171, 200, 0.95);
-}
-
-.lanyard-id-card__field dd {
-  margin: 0;
-  min-width: 0;
-}
-
-.lanyard-id-card__value {
-  display: inline-block;
-  word-break: break-word;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: clamp(0.98rem, 1.5vw, 1.08rem);
-  color: #f7faff;
-  text-decoration: none;
-  transition: color 200ms ease;
-}
-
-.lanyard-id-card__value:hover {
-  color: var(--accent);
-}
-
-.lanyard-id-card__footer {
-  margin: 0;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.32);
-  text-align: center;
-}
-
-@media (max-width: 880px) {
-  .lanyard-layout {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-  }
-
-  .lanyard-stage {
-    height: clamp(380px, 78vw, 480px);
-  }
-}
-
-@media (max-width: 480px) {
-  .lanyard-stage {
-    height: clamp(340px, 82vw, 420px);
-  }
-
-  .lanyard-id-card {
-    padding: 1.05rem;
-    gap: 1rem;
-  }
-
-  .lanyard-id-card__monogram {
-    width: 3.2rem;
-    height: 3.2rem;
-  }
-
-  .lanyard-id-card__monogram-text {
-    font-size: 1.05rem;
-  }
-
-  .lanyard-id-card__fields {
-    padding: 0.85rem;
-    gap: 0.78rem;
-  }
-
-  .lanyard-id-card__footer {
-    font-size: 0.62rem;
-    letter-spacing: 0.18em;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lanyard-stage {
-    display: none;
   }
 }
 
