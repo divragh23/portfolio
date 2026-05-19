@@ -383,7 +383,7 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playI
           ease: introEase,
         }}
       >
-        <a className="nav-home" href="#home" data-scroll-to="home" aria-current="page">
+        <a className="nav-home" href="#home" data-scroll-to="home">
           Home
         </a>
         <div className="nav-more">
@@ -633,7 +633,23 @@ function HomeIntroPage() {
   const [introStage, setIntroStage] = useState(() =>
     playFullIntro ? INTRO_STAGES.loading : INTRO_STAGES.ready
   );
-  useLenisSmoothScroll(!reducedMotion && introStage === INTRO_STAGES.ready);
+  // Lenis is harmless while the loading overlay covers the page (the body
+  // below is hidden), but having it ready as soon as React mounts means the
+  // very first anchor-click or wheel after the intro finishes is already
+  // smoothed. We still pause the loop via the hook's visibilitychange
+  // handling, and we explicitly stop the engine while the loading screen
+  // is on screen so stray wheel events don't drift the document.
+  const lenisRef = useLenisSmoothScroll(!reducedMotion);
+
+  useEffect(() => {
+    const lenis = lenisRef.current;
+    if (!lenis) return;
+    if (introStage === INTRO_STAGES.ready) {
+      lenis.start?.();
+    } else {
+      lenis.stop?.();
+    }
+  }, [introStage, lenisRef]);
   const [navbarExpanded, setNavbarExpanded] = useState(() => !playFullIntro);
   const [loadingProgress, setLoadingProgress] = useState(0.05);
   const [loadingLabel, setLoadingLabel] = useState("Loading portfolio...");
