@@ -1,9 +1,6 @@
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const mobileViewportQuery = window.matchMedia("(max-width: 768px)");
 const siteSessionStorageKey = "portfolio-site-session-loaded";
-const pageTransitionStorageKey = "portfolio-page-transition";
-const pageTransitionExitMs = 420;
-const pageTransitionEnterMs = 520;
 const homeNavGuideDelay = 3000;
 const heroFragmentGrid = {
   columns: 6,
@@ -1058,41 +1055,59 @@ function initScoreboard() {
   }).join("");
 }
 
-function getPageTransitionTarget() {
-  return (
-    document.querySelector(".page-transition-target") ||
-    document.querySelector(".page-shell")
-  );
+function resolveScrollTarget(value) {
+  if (!value) return null;
+  const cleaned = value.replace(/^#/, "");
+  if (!cleaned) return null;
+  return document.getElementById(cleaned);
 }
 
-function initPageTransitions() {
+function smoothScrollToTarget(target, { focus = false } = {}) {
+  if (!target) return;
+
+  const lenis = window.lenis;
+
+  if (lenis && typeof lenis.scrollTo === "function") {
+    lenis.scrollTo(target, {
+      offset: 0,
+      duration: prefersReducedMotion ? 0 : 1.05,
+      easing: (t) => 1 - Math.pow(1 - t, 4),
+    });
+  } else {
+    target.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }
+
+  if (focus && typeof target.focus === "function") {
+    window.setTimeout(() => {
+      target.focus({ preventScroll: true });
+    }, prefersReducedMotion ? 0 : 600);
+  }
+}
+
+function initSinglePageNavigation() {
   if (typeof window === "undefined") {
     return;
   }
 
-  try {
-    if (sessionStorage.getItem(pageTransitionStorageKey) === "1") {
-      sessionStorage.removeItem(pageTransitionStorageKey);
-
-      if (!prefersReducedMotion) {
-        const target = getPageTransitionTarget();
-        document.documentElement.dataset.pageTransition = "enter";
-        target?.classList.add("page-transition-enter");
-
-        window.requestAnimationFrame(() => {
-          window.setTimeout(() => {
-            delete document.documentElement.dataset.pageTransition;
-            target?.classList.remove("page-transition-enter");
-          }, pageTransitionEnterMs);
-        });
-      }
-    }
-  } catch {
-    // Ignore storage failures.
+  function isInPagePath(link) {
+    const path = link.getAttribute("href");
+    if (!path) return false;
+    if (path.startsWith("#")) return true;
+    if (path.startsWith("./#") || path.startsWith("/#")) return true;
+    return false;
   }
 
-  if (prefersReducedMotion) {
-    return;
+  function extractHash(link) {
+    if (link.dataset.scrollTo) return link.dataset.scrollTo;
+    try {
+      const url = new URL(link.href, window.location.href);
+      return url.hash ? url.hash.replace(/^#/, "") : "";
+    } catch {
+      return "";
+    }
   }
 
   document.addEventListener("click", (event) => {
@@ -1105,50 +1120,69 @@ function initPageTransitions() {
       return;
     }
 
-    const href = link.getAttribute("href");
-    if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+    const isAnchorLike = link.dataset.scrollTo || isInPagePath(link);
+    if (!isAnchorLike) {
       return;
     }
 
-    let url;
-    try {
-      url = new URL(link.href, window.location.href);
-    } catch {
+    const hash = extractHash(link);
+    if (!hash) {
       return;
     }
 
-    if (url.origin !== window.location.origin || url.href === window.location.href) {
+    const target = resolveScrollTarget(hash);
+    if (!target) {
       return;
     }
 
     event.preventDefault();
+    smoothScrollToTarget(target);
 
-    const target = getPageTransitionTarget();
-    const delay = prefersReducedMotion ? 0 : pageTransitionExitMs;
-
-    try {
-      sessionStorage.setItem(pageTransitionStorageKey, "1");
-    } catch {
-      window.location.href = url.href;
-      return;
+    if (history.replaceState) {
+      history.replaceState(null, "", `#${hash}`);
+    } else {
+      window.location.hash = `#${hash}`;
     }
-
-    if (!target) {
-      window.location.href = url.href;
-      return;
-    }
-
-    document.documentElement.dataset.pageTransition = "exit";
-    target.classList.add("page-transition-exit");
-
-    window.setTimeout(() => {
-      window.location.href = url.href;
-    }, delay);
   });
+
+  function jumpToInitialHash() {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return;
+    const target = resolveScrollTarget(hash);
+    if (!target) return;
+
+    // Defer until layout + the home intro have a chance to settle so the
+    // smooth scroll lands on the final position, not the loading-screen one.
+    const trigger = () => smoothScrollToTarget(target);
+
+    if (document.body?.dataset.homeIntroState && document.body.dataset.homeIntroState !== "ready") {
+      const observer = new MutationObserver(() => {
+        if (document.body.dataset.homeIntroState === "ready") {
+          observer.disconnect();
+          window.setTimeout(trigger, prefersReducedMotion ? 0 : 80);
+        }
+      });
+      observer.observe(document.body, { attributes: true, attributeFilter: ["data-home-intro-state"] });
+      // Safety fallback if homeIntroState never settles (e.g. errors).
+      window.setTimeout(() => {
+        observer.disconnect();
+        trigger();
+      }, 6000);
+      return;
+    }
+
+    window.requestAnimationFrame(() => window.setTimeout(trigger, 60));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", jumpToInitialHash, { once: true });
+  } else {
+    jumpToInitialHash();
+  }
 }
 
 initViewportBezel();
-initPageTransitions();
+initSinglePageNavigation();
 if (!usesReactSiteMotion) {
   initReveal();
 }
