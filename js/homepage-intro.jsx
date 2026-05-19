@@ -162,11 +162,66 @@ function getHomeRoute(route = "") {
 
 function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playIntroAnimations }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isHoverExpanded, setIsHoverExpanded] = useState(false);
+  const collapseTimeoutRef = useRef(null);
   const navbarTravel = reducedMotion ? 0 : isMobile ? 20 : 282;
   const navbarScale = reducedMotion ? 1 : isMobile ? 1.035 : 1.2;
   const navId = "primary-nav-home-intro";
-  const shouldShowBrandCopy = isMobile || navbarExpanded;
-  const shouldShowDesktopNav = !isMobile && navbarExpanded;
+  // Once the intro is done we want the navbar to behave like a tucked-away
+  // pill (only "Home" visible) that expands on pointer hover / keyboard focus.
+  // Before that point we keep the parent-driven `navbarExpanded` flag so the
+  // entrance choreography from the intro still plays correctly.
+  const introFinished = introStage === INTRO_STAGES.ready;
+  const desktopExpanded = !isMobile && (introFinished ? isHoverExpanded : navbarExpanded);
+  const shouldShowBrandCopy = isMobile || desktopExpanded;
+  const shouldShowDesktopNav = !isMobile && desktopExpanded;
+
+  function clearCollapseTimer() {
+    if (collapseTimeoutRef.current) {
+      window.clearTimeout(collapseTimeoutRef.current);
+      collapseTimeoutRef.current = null;
+    }
+  }
+
+  function openDesktopTopbar() {
+    if (isMobile || !introFinished) return;
+    clearCollapseTimer();
+    setIsHoverExpanded(true);
+  }
+
+  function closeDesktopTopbar({ immediate = false } = {}) {
+    if (isMobile || !introFinished) return;
+    clearCollapseTimer();
+
+    if (immediate || reducedMotion) {
+      setIsHoverExpanded(false);
+      return;
+    }
+
+    collapseTimeoutRef.current = window.setTimeout(() => {
+      setIsHoverExpanded(false);
+      collapseTimeoutRef.current = null;
+    }, 220);
+  }
+
+  useEffect(() => clearCollapseTimer, []);
+
+  // When the intro finishes, leave the nav expanded for a beat so the user can
+  // see it land, then auto-collapse it into the compact "Home" pill.
+  useEffect(() => {
+    if (!introFinished || isMobile) return undefined;
+
+    setIsHoverExpanded(true);
+
+    const collapseDelay = reducedMotion ? 200 : 1400;
+    const collapseId = window.setTimeout(() => {
+      setIsHoverExpanded(false);
+    }, collapseDelay);
+
+    return () => window.clearTimeout(collapseId);
+    // We only want this to run when the intro transitions to ready; isMobile
+    // is included so flipping the viewport mode re-evaluates the schedule.
+  }, [introFinished, isMobile, reducedMotion]);
   const brandState = shouldShowBrandCopy
     ? { opacity: 1, x: 0, filter: "blur(0px)" }
     : { opacity: 0, x: 18, filter: "blur(6px)" };
@@ -181,7 +236,7 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playI
       : { opacity: 0, x: 18, filter: "blur(6px)" };
   const topbarClassName = [
     "topbar",
-    !isMobile && !navbarExpanded ? "topbar--intro-compact" : "",
+    !isMobile && !desktopExpanded ? "topbar--intro-compact" : "",
     isMobile ? "topbar--mobile-ready" : "",
     isMobile && isMobileOpen ? "topbar--mobile-open" : "",
   ]
@@ -219,9 +274,20 @@ function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playI
       }}
       inert={introStage === INTRO_STAGES.ready ? undefined : ""}
       style={{ pointerEvents: introStage === INTRO_STAGES.ready ? "auto" : "none" }}
+      onPointerEnter={openDesktopTopbar}
+      onPointerLeave={() => closeDesktopTopbar()}
+      onFocus={openDesktopTopbar}
+      onBlur={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget)) return;
+        closeDesktopTopbar();
+      }}
       onKeyDown={(event) => {
-        if (event.key === "Escape" && isMobile && isMobileOpen) {
-          setIsMobileOpen(false);
+        if (event.key === "Escape") {
+          if (isMobile && isMobileOpen) {
+            setIsMobileOpen(false);
+          } else if (!isMobile && isHoverExpanded) {
+            closeDesktopTopbar({ immediate: true });
+          }
         }
       }}
     >
