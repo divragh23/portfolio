@@ -19,6 +19,58 @@ const GALAXY_PROPS = {
   transparent: true,
 };
 
+function shouldSkipGalaxy() {
+  if (typeof window === "undefined") return true;
+
+  if (typeof window.matchMedia === "function") {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return true;
+    }
+  }
+
+  const connection =
+    typeof navigator !== "undefined" &&
+    (navigator.connection ||
+      navigator.mozConnection ||
+      navigator.webkitConnection);
+
+  if (connection?.saveData) return true;
+  if (
+    connection?.effectiveType &&
+    /^(slow-2g|2g|3g)$/.test(connection.effectiveType)
+  ) {
+    return true;
+  }
+
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.deviceMemory &&
+    navigator.deviceMemory < 4
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getRuntimeProps() {
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
+  const isNarrow =
+    typeof window !== "undefined" && window.innerWidth < 768;
+  const mobileLike = isCoarsePointer || isNarrow;
+
+  return {
+    ...GALAXY_PROPS,
+    // Cap canvas resolution. 1.0 device-px is already plenty for a star field;
+    // also drop a notch lower on phones to cut fragment cost ~30%.
+    maxDpr: 1,
+    renderScale: mobileLike ? 0.8 : 1,
+  };
+}
+
 export function mountGalaxyBackground() {
   if (typeof window === "undefined") return;
   if (window[GALAXY_INSTANCE_KEY]) return;
@@ -26,7 +78,12 @@ export function mountGalaxyBackground() {
   const node = document.getElementById(GALAXY_ROOT_ID);
   if (!node) return;
 
+  if (shouldSkipGalaxy()) {
+    node.dataset.galaxyDisabled = "true";
+    return;
+  }
+
   const root = createRoot(node);
-  root.render(<Galaxy {...GALAXY_PROPS} />);
+  root.render(<Galaxy {...getRuntimeProps()} />);
   window[GALAXY_INSTANCE_KEY] = root;
 }
