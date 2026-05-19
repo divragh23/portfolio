@@ -4,9 +4,9 @@ import Lanyard from "./components/Lanyard";
 
 const ROOT_ID = "lanyard-root";
 
-function shouldMount() {
+function shouldMount(node) {
   if (typeof window === "undefined") return false;
-  if (document.body?.dataset.page !== "contact") return false;
+  if (!node) return false;
   if (typeof window.matchMedia === "function") {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return false;
@@ -16,6 +16,6 @@ function shouldMount() {
 }
 
 const node = document.getElementById(ROOT_ID);
-if (node && shouldMount()) {
+if (shouldMount(node)) {
   createRoot(node).render(<Lanyard position={[0, 0, 18]} gravity={[0, -40, 0]} fov={20} transparent />);
 }
