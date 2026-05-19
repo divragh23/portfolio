@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLenisSmoothScroll } from "./use-lenis";
 import TextPressure from "./components/TextPressure";
 import ShinyText from "./components/ShinyText";
+import InfiniteMenu from "./components/InfiniteMenu";
+import { buildInfiniteMenuItems } from "./infinite-menu-items";
 import { mountGalaxyBackground } from "./mount-galaxy";
 import {
   BRAND_PROFILE_PHOTO_ALT,
@@ -160,241 +162,129 @@ function getHomeRoute(route = "") {
   return route ? `${route}/` : "./";
 }
 
-function HomeNavbar({ introStage, navbarExpanded, reducedMotion, isMobile, playIntroAnimations }) {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isHoverExpanded, setIsHoverExpanded] = useState(false);
-  const collapseTimeoutRef = useRef(null);
-  const navbarTravel = reducedMotion ? 0 : isMobile ? 20 : 282;
-  const navbarScale = reducedMotion ? 1 : isMobile ? 1.035 : 1.2;
-  const navId = "primary-nav-home-intro";
-  // Once the intro is done we want the navbar to behave like a tucked-away
-  // pill (only "Home" visible) that expands on pointer hover / keyboard focus.
-  // Before that point we keep the parent-driven `navbarExpanded` flag so the
-  // entrance choreography from the intro still plays correctly.
-  const introFinished = introStage === INTRO_STAGES.ready;
-  const desktopExpanded = !isMobile && (introFinished ? isHoverExpanded : navbarExpanded);
-  const shouldShowBrandCopy = isMobile || desktopExpanded;
-  const shouldShowDesktopNav = !isMobile && desktopExpanded;
-
-  function clearCollapseTimer() {
-    if (collapseTimeoutRef.current) {
-      window.clearTimeout(collapseTimeoutRef.current);
-      collapseTimeoutRef.current = null;
-    }
-  }
-
-  function openDesktopTopbar() {
-    if (isMobile || !introFinished) return;
-    clearCollapseTimer();
-    setIsHoverExpanded(true);
-  }
-
-  function closeDesktopTopbar({ immediate = false } = {}) {
-    if (isMobile || !introFinished) return;
-    clearCollapseTimer();
-
-    if (immediate || reducedMotion) {
-      setIsHoverExpanded(false);
-      return;
-    }
-
-    collapseTimeoutRef.current = window.setTimeout(() => {
-      setIsHoverExpanded(false);
-      collapseTimeoutRef.current = null;
-    }, 220);
-  }
-
-  useEffect(() => clearCollapseTimer, []);
-
-  // When the intro finishes, leave the nav expanded for a beat so the user can
-  // see it land, then auto-collapse it into the compact "Home" pill.
-  useEffect(() => {
-    if (!introFinished || isMobile) return undefined;
-
-    setIsHoverExpanded(true);
-
-    const collapseDelay = reducedMotion ? 200 : 1400;
-    const collapseId = window.setTimeout(() => {
-      setIsHoverExpanded(false);
-    }, collapseDelay);
-
-    return () => window.clearTimeout(collapseId);
-    // We only want this to run when the intro transitions to ready; isMobile
-    // is included so flipping the viewport mode re-evaluates the schedule.
-  }, [introFinished, isMobile, reducedMotion]);
-  const brandState = shouldShowBrandCopy
-    ? { opacity: 1, x: 0, filter: "blur(0px)" }
-    : { opacity: 0, x: 18, filter: "blur(6px)" };
-  const navState = isMobile
-    ? {
-        opacity: isMobileOpen ? 1 : 0,
-        x: 0,
-        filter: isMobileOpen ? "blur(0px)" : "blur(8px)",
-      }
-    : shouldShowDesktopNav
-      ? { opacity: 1, x: 0, filter: "blur(0px)" }
-      : { opacity: 0, x: 18, filter: "blur(6px)" };
-  const topbarClassName = [
-    "topbar",
-    !isMobile && !desktopExpanded ? "topbar--intro-compact" : "",
-    isMobile ? "topbar--mobile-ready" : "",
-    isMobile && isMobileOpen ? "topbar--mobile-open" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  useEffect(() => {
-    if (!isMobile || introStage !== INTRO_STAGES.ready) {
-      setIsMobileOpen(false);
-    }
-  }, [introStage, isMobile]);
+// The navbar is now a small fixed pill containing only the LinkedIn brand
+// photo. All primary navigation lives in the InfiniteMenu sphere widget
+// (see InfiniteNavMenu below) so the user can drag the 3D nav to surface
+// Home / About / Hobbies / Contact, and tap the action button to scroll.
+function HomeBrandPill({ introStage, reducedMotion, isMobile, playIntroAnimations }) {
+  const brandTravel = reducedMotion ? 0 : isMobile ? 20 : 60;
 
   return (
     <motion.header
-      className={topbarClassName}
+      className="topbar topbar--brand-only"
       initial={
         playIntroAnimations
           ? {
-              opacity: reducedMotion ? 1 : isMobile ? 0 : 0.72,
-              y: navbarTravel,
-              scale: navbarScale,
-              filter: reducedMotion ? "blur(0px)" : isMobile ? "blur(10px)" : "blur(6px)",
+              opacity: reducedMotion ? 1 : 0,
+              y: brandTravel,
+              filter: reducedMotion ? "blur(0px)" : "blur(8px)",
             }
           : false
       }
-      animate={{
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        filter: "blur(0px)",
-      }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{
-        duration: reducedMotion ? 0.24 : isMobile ? 0.82 : 1.34,
+        duration: reducedMotion ? 0.24 : 0.82,
         ease: introEase,
       }}
       inert={introStage === INTRO_STAGES.ready ? undefined : ""}
       style={{ pointerEvents: introStage === INTRO_STAGES.ready ? "auto" : "none" }}
-      onPointerEnter={openDesktopTopbar}
-      onPointerLeave={() => closeDesktopTopbar()}
-      onFocus={openDesktopTopbar}
-      onBlur={(event) => {
-        if (event.currentTarget.contains(event.relatedTarget)) return;
-        closeDesktopTopbar();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          if (isMobile && isMobileOpen) {
-            setIsMobileOpen(false);
-          } else if (!isMobile && isHoverExpanded) {
-            closeDesktopTopbar({ immediate: true });
-          }
-        }
-      }}
     >
-      <div className="brand">
-        <a
-          className="brand-photo brand-photo--has-image"
-          href="https://www.linkedin.com/in/divyansh-raghuvanshi-8b4367371/"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Visit Divyansh Raghuvanshi's LinkedIn profile"
-        >
-          <img
-            src={BRAND_PROFILE_PHOTO_SRC}
-            alt={BRAND_PROFILE_PHOTO_ALT}
-            width={104}
-            height={104}
-            decoding="async"
-          />
-          <span className="brand-monogram" aria-hidden="true">
-            <span className="brand-monogram__text">DR</span>
-          </span>
-          <span className="visually-hidden">Divyansh Raghuvanshi</span>
-        </a>
-
-        <motion.a
-          className="brand-copy"
-          href={getHomeRoute()}
-          initial={false}
-          animate={brandState}
-          transition={{
-            duration: reducedMotion ? 0.18 : 0.55,
-            delay: reducedMotion ? 0 : shouldShowBrandCopy ? 0.08 : 0,
-            ease: introEase,
-          }}
-        >
-          <span className="brand-text">Divyansh Raghuvanshi</span>
-        </motion.a>
-      </div>
-
-      <motion.button
-        type="button"
-        className="nav-toggle"
-        aria-controls={navId}
-        aria-label="Toggle navigation"
-        aria-expanded={String(isMobile && isMobileOpen)}
-        hidden={!isMobile}
-        initial={false}
-        animate={
-          isMobile
-            ? { opacity: 1, x: 0, filter: "blur(0px)" }
-            : { opacity: 0, x: 12, filter: "blur(6px)" }
-        }
-        transition={{
-          duration: reducedMotion ? 0.18 : 0.42,
-          delay: reducedMotion || !isMobile ? 0 : 0.12,
-          ease: introEase,
-        }}
-        onClick={() => {
-          if (introStage !== INTRO_STAGES.ready) {
-            return;
-          }
-
-          setIsMobileOpen((current) => !current);
-        }}
+      <a
+        className="brand-photo brand-photo--has-image"
+        href="https://www.linkedin.com/in/divyansh-raghuvanshi-8b4367371/"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Visit Divyansh Raghuvanshi's LinkedIn profile"
       >
-        <span className="nav-toggle__label">{isMobileOpen ? "Close" : "Menu"}</span>
-        <span className="nav-toggle__icon" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
+        <img
+          src={BRAND_PROFILE_PHOTO_SRC}
+          alt={BRAND_PROFILE_PHOTO_ALT}
+          width={104}
+          height={104}
+          decoding="async"
+        />
+        <span className="brand-monogram" aria-hidden="true">
+          <span className="brand-monogram__text">DR</span>
         </span>
-      </motion.button>
-
-      <motion.nav
-        id={navId}
-        className={`nav ${shouldShowDesktopNav ? "nav--expanded nav--revealed" : ""} ${
-          isMobile && isMobileOpen ? "nav--mobile-open" : ""
-        }`.trim()}
-        aria-label="Primary"
-        aria-hidden={isMobile ? String(!isMobileOpen) : undefined}
-        onClick={(event) => {
-          if (!isMobile || !event.target.closest("a")) {
-            return;
-          }
-
-          setIsMobileOpen(false);
-        }}
-        initial={false}
-        animate={navState}
-        transition={{
-          duration: reducedMotion ? 0.18 : isMobile ? 0.3 : 0.6,
-          delay: reducedMotion || isMobile || !shouldShowDesktopNav ? 0 : 0.12,
-          ease: introEase,
-        }}
-      >
-        <a className="nav-home" href="#home" data-scroll-to="home">
-          Home
-        </a>
-        <div className="nav-more">
-          <a href="#about" data-scroll-to="about">About</a>
-          <a href="#experience" data-scroll-to="experience">Experience</a>
-          <a href="#projects" data-scroll-to="projects">Projects</a>
-          <a href="#hobbies" data-scroll-to="hobbies">Hobbies</a>
-          <a href="#contact" data-scroll-to="contact">Contact</a>
-        </div>
-      </motion.nav>
+        <span className="visually-hidden">Divyansh Raghuvanshi</span>
+      </a>
     </motion.header>
+  );
+}
+
+function InfiniteNavMenu({ introStage, reducedMotion, isMobile, playIntroAnimations }) {
+  const items = useMemo(() => {
+    if (typeof document === "undefined" || reducedMotion) return [];
+    try {
+      return buildInfiniteMenuItems();
+    } catch {
+      return [];
+    }
+  }, [reducedMotion]);
+  const introFinished = introStage === INTRO_STAGES.ready;
+  const lift = reducedMotion ? 0 : isMobile ? 18 : 32;
+
+  // Accessibility fallback: if the user prefers reduced motion (or WebGL
+  // isn't available), we render a plain list of anchor links so keyboard
+  // and screen-reader users still have a navbar.
+  if (reducedMotion || !items.length) {
+    return (
+      <nav
+        className="infinite-nav infinite-nav--fallback"
+        aria-label="Primary navigation"
+        data-intro-finished={String(introFinished)}
+      >
+        <a href="#home" data-scroll-to="home">Home</a>
+        <a href="#about" data-scroll-to="about">About</a>
+        <a href="#hobbies" data-scroll-to="hobbies">Hobbies</a>
+        <a href="#contact" data-scroll-to="contact">Contact</a>
+      </nav>
+    );
+  }
+
+  const handleSelect = (item) => {
+    if (!item?.link) return;
+    if (typeof window.__portfolioScrollToSection === "function") {
+      window.__portfolioScrollToSection(item.link);
+    } else if (item.link.startsWith("#")) {
+      const target = document.getElementById(item.link.slice(1));
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  return (
+    <motion.aside
+      className="infinite-nav"
+      aria-label="Portfolio navigation sphere"
+      initial={
+        playIntroAnimations
+          ? {
+              opacity: 0,
+              y: lift,
+              scale: 0.92,
+              filter: "blur(6px)",
+            }
+          : false
+      }
+      animate={{
+        opacity: introFinished ? 1 : 0,
+        y: introFinished ? 0 : lift,
+        scale: introFinished ? 1 : 0.96,
+        filter: introFinished ? "blur(0px)" : "blur(4px)",
+      }}
+      transition={{
+        duration: reducedMotion ? 0.2 : 0.74,
+        ease: introEase,
+      }}
+      style={{ pointerEvents: introFinished ? "auto" : "none" }}
+    >
+      <InfiniteMenu
+        items={items}
+        scale={isMobile ? 1.1 : 0.95}
+        onSelect={handleSelect}
+        autoStart={introFinished}
+      />
+    </motion.aside>
   );
 }
 
@@ -650,7 +540,6 @@ function HomeIntroPage() {
       lenis.stop?.();
     }
   }, [introStage, lenisRef]);
-  const [navbarExpanded, setNavbarExpanded] = useState(() => !playFullIntro);
   const [loadingProgress, setLoadingProgress] = useState(0.05);
   const [loadingLabel, setLoadingLabel] = useState("Loading portfolio...");
   const [loadingReady, setLoadingReady] = useState(false);
@@ -769,8 +658,6 @@ function HomeIntroPage() {
     clearQueuedTimeouts();
 
     if (introStage === INTRO_STAGES.loading) {
-      setNavbarExpanded(false);
-
       if (!loadingReady) {
         return;
       }
@@ -783,14 +670,6 @@ function HomeIntroPage() {
     }
 
     if (introStage === INTRO_STAGES.navbarIntro) {
-      setNavbarExpanded(reducedMotion || isMobile);
-
-      if (!reducedMotion && !isMobile) {
-        queueTimeout(() => {
-          setNavbarExpanded(true);
-        }, 1260);
-      }
-
       queueTimeout(() => {
         setIntroStage(INTRO_STAGES.heroIntro);
       }, reducedMotion ? 260 : isMobile ? 920 : 2220);
@@ -837,9 +716,15 @@ function HomeIntroPage() {
 
       {introStage !== INTRO_STAGES.loading ? (
         <motion.div className="page-shell home-page-shell">
-          <HomeNavbar
+          <HomeBrandPill
             introStage={introStage}
-            navbarExpanded={navbarExpanded}
+            reducedMotion={reducedMotion}
+            isMobile={isMobile}
+            playIntroAnimations={playFullIntro}
+          />
+
+          <InfiniteNavMenu
+            introStage={introStage}
             reducedMotion={reducedMotion}
             isMobile={isMobile}
             playIntroAnimations={playFullIntro}
