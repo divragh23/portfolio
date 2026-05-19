@@ -15,6 +15,13 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      try {
+        if (sessionStorage.getItem("portfolio-page-transition") === "1") {
+          document.documentElement.dataset.pageTransition = "enter";
+        }
+      } catch {}
+    </script>
   </head>
   <body data-page="home" data-home-intro-state="loading">
     <div id="galaxy-bg-root" class="galaxy-bg-root" aria-hidden="true"></div>

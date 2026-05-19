@@ -1,6 +1,9 @@
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const mobileViewportQuery = window.matchMedia("(max-width: 768px)");
 const siteSessionStorageKey = "portfolio-site-session-loaded";
+const pageTransitionStorageKey = "portfolio-page-transition";
+const pageTransitionExitMs = 420;
+const pageTransitionEnterMs = 520;
 const homeNavGuideDelay = 3000;
 const heroFragmentGrid = {
   columns: 6,
@@ -1055,7 +1058,97 @@ function initScoreboard() {
   }).join("");
 }
 
+function getPageTransitionTarget() {
+  return (
+    document.querySelector(".page-transition-target") ||
+    document.querySelector(".page-shell")
+  );
+}
+
+function initPageTransitions() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    if (sessionStorage.getItem(pageTransitionStorageKey) === "1") {
+      sessionStorage.removeItem(pageTransitionStorageKey);
+
+      if (!prefersReducedMotion) {
+        const target = getPageTransitionTarget();
+        document.documentElement.dataset.pageTransition = "enter";
+        target?.classList.add("page-transition-enter");
+
+        window.requestAnimationFrame(() => {
+          window.setTimeout(() => {
+            delete document.documentElement.dataset.pageTransition;
+            target?.classList.remove("page-transition-enter");
+          }, pageTransitionEnterMs);
+        });
+      }
+    }
+  } catch {
+    // Ignore storage failures.
+  }
+
+  if (prefersReducedMotion) {
+    return;
+  }
+
+  document.addEventListener("click", (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+      return;
+    }
+
+    const link = event.target.closest("a[href]");
+    if (!link || link.target === "_blank" || link.hasAttribute("download")) {
+      return;
+    }
+
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+      return;
+    }
+
+    let url;
+    try {
+      url = new URL(link.href, window.location.href);
+    } catch {
+      return;
+    }
+
+    if (url.origin !== window.location.origin || url.href === window.location.href) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const target = getPageTransitionTarget();
+    const delay = prefersReducedMotion ? 0 : pageTransitionExitMs;
+
+    try {
+      sessionStorage.setItem(pageTransitionStorageKey, "1");
+    } catch {
+      window.location.href = url.href;
+      return;
+    }
+
+    if (!target) {
+      window.location.href = url.href;
+      return;
+    }
+
+    document.documentElement.dataset.pageTransition = "exit";
+    target.classList.add("page-transition-exit");
+
+    window.setTimeout(() => {
+      window.location.href = url.href;
+    }, delay);
+  });
+}
+
 initViewportBezel();
+initPageTransitions();
 if (!usesReactSiteMotion) {
   initReveal();
 }

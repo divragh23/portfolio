@@ -33,6 +33,67 @@ extend({ MeshLineGeometry, MeshLineMaterial });
 const CARD_URL = "/assets/lanyard/card.glb";
 const CARD_FACE_MAP_URL = "/assets/lanyard/uconn-husky.png";
 
+/** Fit the husky mark into the GLB card-face UV region (React Bits card layout). */
+function createCardFaceMap(logoTexture, templateMap) {
+  const templateImage = templateMap?.image;
+  const width = templateImage?.width || 1024;
+  const height = templateImage?.height || 1024;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+
+  if (templateImage) {
+    ctx.drawImage(templateImage, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = "#12101c";
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  const logo = logoTexture?.image;
+  if (logo) {
+    const faceX = width * 0.17;
+    const faceY = height * 0.2;
+    const faceW = width * 0.66;
+    const faceH = height * 0.54;
+    const pad = 0.07;
+    const maxW = faceW * (1 - pad * 2);
+    const maxH = faceH * (1 - pad * 2);
+    const scale = Math.min(maxW / logo.width, maxH / logo.height);
+    const drawW = logo.width * scale;
+    const drawH = logo.height * scale;
+    const drawX = faceX + (faceW - drawW) / 2;
+    const drawY = faceY + (faceH - drawH) / 2;
+
+    ctx.save();
+    ctx.fillStyle = "#14121f";
+    ctx.fillRect(faceX, faceY, faceW, faceH);
+    if (templateImage) {
+      ctx.drawImage(
+        templateImage,
+        faceX,
+        faceY,
+        faceW,
+        faceH,
+        faceX,
+        faceY,
+        faceW,
+        faceH,
+      );
+    }
+    ctx.drawImage(logo, drawX, drawY, drawW, drawH);
+    ctx.restore();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false;
+  texture.anisotropy = 16;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function createBandTexture({ width = 1024, height = 128 } = {}) {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
@@ -96,14 +157,24 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }) {
   };
 
   const { nodes, materials } = useGLTF(CARD_URL);
-  const cardFaceMap = useTexture(CARD_FACE_MAP_URL);
+  const huskyLogoMap = useTexture(CARD_FACE_MAP_URL);
 
-  useLayoutEffect(() => {
-    cardFaceMap.colorSpace = THREE.SRGBColorSpace;
-    cardFaceMap.flipY = false;
-    cardFaceMap.anisotropy = 16;
-    cardFaceMap.needsUpdate = true;
-  }, [cardFaceMap]);
+  const cardFaceMap = useMemo(() => {
+    if (!huskyLogoMap?.image) {
+      return materials.base.map;
+    }
+
+    return createCardFaceMap(huskyLogoMap, materials.base.map);
+  }, [huskyLogoMap, materials.base.map]);
+
+  useLayoutEffect(
+    () => () => {
+      if (cardFaceMap && cardFaceMap !== materials.base.map) {
+        cardFaceMap.dispose();
+      }
+    },
+    [cardFaceMap, materials.base.map],
+  );
 
   const bandTexture = useMemo(() => createBandTexture(), []);
 
