@@ -5,7 +5,11 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLenisSmoothScroll } from "./use-lenis";
 import { mountGalaxyBackground } from "./mount-galaxy";
-import { mountTargetCursor } from "./mount-target-cursor";
+import {
+  BRAND_PROFILE_PHOTO_ALT,
+  BRAND_PROFILE_PHOTO_SRC,
+} from "./brand-constants";
+import { initTargetCursorWhenReady } from "./init-target-cursor-when-ready";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -151,12 +155,19 @@ function SiteTopbar({ page }) {
     >
       <div className="brand">
         <a
-          className="brand-photo"
+          className="brand-photo brand-photo--has-image"
           href="https://www.linkedin.com/in/divyansh-raghuvanshi-8b4367371/"
           target="_blank"
           rel="noreferrer"
           aria-label="Visit Divyansh Raghuvanshi's LinkedIn profile"
         >
+          <img
+            src={BRAND_PROFILE_PHOTO_SRC}
+            alt={BRAND_PROFILE_PHOTO_ALT}
+            width={104}
+            height={104}
+            decoding="async"
+          />
           <span className="brand-monogram" aria-hidden="true">
             <span className="brand-monogram__text">DR</span>
           </span>
@@ -558,4 +569,4 @@ if (siteMotionRoot && page && page !== "home") {
 }
 
 mountGalaxyBackground();
-mountTargetCursor();
+initTargetCursorWhenReady();
