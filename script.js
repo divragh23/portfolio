@@ -42,7 +42,7 @@ function initViewportBezel() {
 }
 
 function initReveal() {
-  const revealItems = document.querySelectorAll(".reveal");
+  const revealItems = document.querySelectorAll(".reveal:not(.is-visible)");
 
   if (!revealItems.length) {
     return;
@@ -50,6 +50,28 @@ function initReveal() {
 
   if (prefersReducedMotion) {
     revealItems.forEach((item) => item.classList.add("is-visible"));
+    return;
+  }
+
+  // Reveal items already in view immediately (no transition lag) and observe
+  // the rest so they fade in as the user scrolls toward them. The negative
+  // bottom rootMargin starts the animation ~12% before the element actually
+  // enters the viewport, so the transition is mostly finished by the time
+  // the section is on-screen — which is what removes the "jank when new
+  // things appear" feel.
+  const viewportHeight = window.innerHeight;
+  revealItems.forEach((item) => {
+    const rect = item.getBoundingClientRect();
+    if (rect.top < viewportHeight && rect.bottom > 0) {
+      item.classList.add("is-visible");
+    }
+  });
+
+  const pending = Array.from(revealItems).filter(
+    (item) => !item.classList.contains("is-visible")
+  );
+
+  if (!pending.length) {
     return;
   }
 
@@ -62,10 +84,10 @@ function initReveal() {
         }
       });
     },
-    { threshold: 0.16 }
+    { rootMargin: "0px 0px -12% 0px", threshold: 0.01 }
   );
 
-  revealItems.forEach((item) => observer.observe(item));
+  pending.forEach((item) => observer.observe(item));
 }
 
 function sleep(ms) {
