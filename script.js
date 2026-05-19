@@ -1255,6 +1255,28 @@ function initActiveSectionTracking() {
   window.__portfolioSetActiveSection = setActive;
 }
 
+// Programmatic API exposed to React-mounted UI (e.g. the InfiniteMenu
+// navbar) so it can ask for a smooth scroll without having to duplicate
+// the Lenis lookup / fallback logic.
+window.__portfolioScrollToSection = function scrollToSection(hashOrId) {
+  if (!hashOrId) return;
+  const id = String(hashOrId).replace(/^#/, "");
+  const target = document.getElementById(id);
+  if (!target) return;
+
+  if (typeof window.__portfolioSetActiveSection === "function") {
+    window.__portfolioSetActiveSection(id);
+  }
+
+  smoothScrollToTarget(target);
+
+  if (history.replaceState) {
+    history.replaceState(null, "", `#${id}`);
+  } else {
+    window.location.hash = `#${id}`;
+  }
+};
+
 function initSinglePageNavigation() {
   if (typeof window === "undefined") {
     return;
