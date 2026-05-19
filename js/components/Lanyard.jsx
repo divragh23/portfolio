@@ -33,62 +33,70 @@ extend({ MeshLineGeometry, MeshLineMaterial });
 const CARD_URL = "/assets/lanyard/card.glb";
 const CARD_FACE_MAP_URL = "/assets/lanyard/uconn-husky.png";
 
-/** Fit the husky mark into the GLB card-face UV region (React Bits card layout). */
+/**
+ * React Bits card.glb base map (1678×1677): atom logo top-left, reactbits.dev
+ * graphic top-right. Card mesh UVs use the top ~76% of this atlas (v ≤ 0.757).
+ */
+const CARD_LOGO_ERASE_REGIONS = [
+  { x: 0, y: 0, w: 0.5, h: 0.52 },
+  { x: 0.44, y: 0, w: 0.56, h: 0.58 },
+];
+
+const CARD_HUSKY_PLACEMENT = {
+  cx: 0.5,
+  // Card mesh UVs span v≈0–0.76 (origin at bottom); center ≈62% from texture top.
+  cy: 0.62,
+  maxWidth: 0.5,
+  maxHeight: 0.38,
+};
+
+function patchCardGrain(ctx, templateImage, width, height, x, y, patchW, patchH) {
+  const sx = Math.floor(width * 0.34);
+  const sy = Math.floor(height * 0.84);
+  const sw = Math.max(1, Math.floor(width * 0.32));
+  const sh = Math.max(1, Math.floor(height * 0.06));
+  ctx.drawImage(templateImage, sx, sy, sw, sh, x, y, patchW, patchH);
+}
+
 function createCardFaceMap(logoTexture, templateMap) {
   const templateImage = templateMap?.image;
-  const width = templateImage?.width || 1024;
-  const height = templateImage?.height || 1024;
+  const logoImage = logoTexture?.image;
+
+  if (!templateImage?.width || !logoImage?.width) {
+    return null;
+  }
+
+  const width = templateImage.width;
+  const height = templateImage.height;
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
 
-  if (templateImage) {
-    ctx.drawImage(templateImage, 0, 0, width, height);
-  } else {
-    ctx.fillStyle = "#12101c";
-    ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(templateImage, 0, 0, width, height);
+
+  for (const region of CARD_LOGO_ERASE_REGIONS) {
+    const x = Math.floor(width * region.x);
+    const y = Math.floor(height * region.y);
+    const patchW = Math.ceil(width * region.w);
+    const patchH = Math.ceil(height * region.h);
+    patchCardGrain(ctx, templateImage, width, height, x, y, patchW, patchH);
   }
 
-  const logo = logoTexture?.image;
-  if (logo) {
-    const faceX = width * 0.17;
-    const faceY = height * 0.2;
-    const faceW = width * 0.66;
-    const faceH = height * 0.54;
-    const pad = 0.07;
-    const maxW = faceW * (1 - pad * 2);
-    const maxH = faceH * (1 - pad * 2);
-    const scale = Math.min(maxW / logo.width, maxH / logo.height);
-    const drawW = logo.width * scale;
-    const drawH = logo.height * scale;
-    const drawX = faceX + (faceW - drawW) / 2;
-    const drawY = faceY + (faceH - drawH) / 2;
+  const maxW = width * CARD_HUSKY_PLACEMENT.maxWidth;
+  const maxH = height * CARD_HUSKY_PLACEMENT.maxHeight;
+  const scale = Math.min(maxW / logoImage.width, maxH / logoImage.height);
+  const drawW = logoImage.width * scale;
+  const drawH = logoImage.height * scale;
+  const drawX = width * CARD_HUSKY_PLACEMENT.cx - drawW / 2;
+  const drawY = height * CARD_HUSKY_PLACEMENT.cy - drawH / 2;
 
-    ctx.save();
-    ctx.fillStyle = "#14121f";
-    ctx.fillRect(faceX, faceY, faceW, faceH);
-    if (templateImage) {
-      ctx.drawImage(
-        templateImage,
-        faceX,
-        faceY,
-        faceW,
-        faceH,
-        faceX,
-        faceY,
-        faceW,
-        faceH,
-      );
-    }
-    ctx.drawImage(logo, drawX, drawY, drawW, drawH);
-    ctx.restore();
-  }
+  ctx.drawImage(logoImage, drawX, drawY, drawW, drawH);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.flipY = false;
+  texture.flipY = templateMap.flipY;
   texture.anisotropy = 16;
   texture.needsUpdate = true;
   return texture;
@@ -158,23 +166,47 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }) {
 
   const { nodes, materials } = useGLTF(CARD_URL);
   const huskyLogoMap = useTexture(CARD_FACE_MAP_URL);
+  const templateMap = materials.base.map;
+  const [cardFaceMap, setCardFaceMap] = useState(null);
 
-  const cardFaceMap = useMemo(() => {
-    if (!huskyLogoMap?.image) {
-      return materials.base.map;
+  useLayoutEffect(() => {
+    let active = true;
+    let builtMap = null;
+
+    const build = () => {
+      if (!active) return;
+
+      const next = createCardFaceMap(huskyLogoMap, templateMap);
+      if (!next) return;
+
+      if (builtMap && builtMap !== templateMap) {
+        builtMap.dispose();
+      }
+
+      builtMap = next;
+      setCardFaceMap(next);
+    };
+
+    build();
+
+    const logoImage = huskyLogoMap?.image;
+    const templateImage = templateMap?.image;
+
+    if (logoImage && !logoImage.complete) {
+      logoImage.addEventListener("load", build, { once: true });
     }
 
-    return createCardFaceMap(huskyLogoMap, materials.base.map);
-  }, [huskyLogoMap, materials.base.map]);
+    if (templateImage && !templateImage.complete) {
+      templateImage.addEventListener("load", build, { once: true });
+    }
 
-  useLayoutEffect(
-    () => () => {
-      if (cardFaceMap && cardFaceMap !== materials.base.map) {
-        cardFaceMap.dispose();
+    return () => {
+      active = false;
+      if (builtMap && builtMap !== templateMap) {
+        builtMap.dispose();
       }
-    },
-    [cardFaceMap, materials.base.map],
-  );
+    };
+  }, [huskyLogoMap, templateMap]);
 
   const bandTexture = useMemo(() => createBandTexture(), []);
 
@@ -300,7 +332,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false }) {
           >
             <mesh geometry={nodes.card.geometry}>
               <meshPhysicalMaterial
-                map={cardFaceMap}
+                map={cardFaceMap || templateMap}
                 map-anisotropy={16}
                 clearcoat={isMobile ? 0 : 1}
                 clearcoatRoughness={0.15}

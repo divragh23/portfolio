@@ -409,6 +409,16 @@ html[data-page-transition="enter"] .page-transition-target,
   .target-cursor-wrapper {
     display: none;
   }
+
+  html[data-page-transition],
+  .page-transition-target.page-transition-exit,
+  .page-transition-target.page-transition-enter {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 .bottom-bend {
