@@ -188,6 +188,12 @@ export default function Galaxy({
   rotationSpeed = 0.1,
   autoCenterRepulsion = 0,
   transparent = true,
+  // Cap the internal render resolution for performance. The galaxy is a
+  // full-screen fragment shader; rendering at native devicePixelRatio on a
+  // retina display can double or quadruple the fragment work without a
+  // visible quality gain for a star field. 1.0 is plenty here.
+  maxDpr = 1,
+  renderScale = 1,
   ...rest
 }) {
   const ctnDom = useRef(null);
@@ -199,9 +205,14 @@ export default function Galaxy({
   useEffect(() => {
     if (!ctnDom.current) return;
     const ctn = ctnDom.current;
+    const cappedDpr = Math.min(
+      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
+      maxDpr,
+    );
     const renderer = new Renderer({
       alpha: transparent,
       premultipliedAlpha: false,
+      dpr: cappedDpr,
     });
     const gl = renderer.gl;
 
@@ -216,8 +227,7 @@ export default function Galaxy({
     let program;
 
     function resize() {
-      const scale = 1;
-      renderer.setSize(ctn.offsetWidth * scale, ctn.offsetHeight * scale);
+      renderer.setSize(ctn.offsetWidth * renderScale, ctn.offsetHeight * renderScale);
       if (program) {
         program.uniforms.uResolution.value = new Color(
           gl.canvas.width,
@@ -267,9 +277,11 @@ export default function Galaxy({
     });
 
     const mesh = new Mesh(gl, { geometry, program });
-    let animateId;
+    let animateId = 0;
+    let running = true;
 
     function update(t) {
+      if (!running) return;
       animateId = requestAnimationFrame(update);
       if (!disableAnimation) {
         program.uniforms.uTime.value = t * 0.001;
@@ -291,7 +303,31 @@ export default function Galaxy({
 
       renderer.render({ scene: mesh });
     }
-    animateId = requestAnimationFrame(update);
+
+    function startLoop() {
+      if (running && animateId) return;
+      running = true;
+      animateId = requestAnimationFrame(update);
+    }
+
+    function stopLoop() {
+      running = false;
+      if (animateId) {
+        cancelAnimationFrame(animateId);
+        animateId = 0;
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        stopLoop();
+      } else {
+        startLoop();
+      }
+    }
+
+    startLoop();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     ctn.appendChild(gl.canvas);
 
     function handleMouseMove(e) {
@@ -307,12 +343,13 @@ export default function Galaxy({
     }
 
     if (mouseInteraction) {
-      ctn.addEventListener("mousemove", handleMouseMove);
+      ctn.addEventListener("mousemove", handleMouseMove, { passive: true });
       ctn.addEventListener("mouseleave", handleMouseLeave);
     }
 
     return () => {
-      cancelAnimationFrame(animateId);
+      stopLoop();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", resize);
       if (mouseInteraction) {
         ctn.removeEventListener("mousemove", handleMouseMove);
@@ -338,6 +375,8 @@ export default function Galaxy({
     repulsionStrength,
     autoCenterRepulsion,
     transparent,
+    maxDpr,
+    renderScale,
   ]);
 
   return <div ref={ctnDom} className="galaxy-container" {...rest} />;

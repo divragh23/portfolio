@@ -3781,3 +3781,53 @@ body[data-react-motion="true"] .reveal.is-visible {
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Performance overrides
+   ---------------------------------------------------------------------------
+   The biggest GPU costs on this site are stacked backdrop-filter blurs
+   (panels + topbar + nav + cards) layered over the WebGL Galaxy background.
+   On smaller / lower-end devices, halve the blur radius and drop the
+   saturate(...) pass, which roughly halves the GPU work per panel without
+   noticeably changing the visual identity. Also tone down `will-change`
+   declarations that promote layers we don't actually animate.
+   --------------------------------------------------------------------------- */
+@media (max-width: 980px) {
+  .topbar,
+  .nav,
+  body[data-page="home"] .topbar,
+  body[data-page="home"] .nav,
+  .panel,
+  .construction-overlay__card,
+  .projects-redirect-card {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .home-loading-screen {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .panel,
+  .construction-overlay__card,
+  .projects-redirect-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .nav,
+  .panel,
+  .construction-overlay__card,
+  .projects-redirect-card,
+  body[data-page="home"] .topbar,
+  body[data-page="home"] .nav {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
