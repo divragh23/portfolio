@@ -21,6 +21,10 @@ const TargetCursor = ({
   const tickerFnRef = useRef(null);
   const activeStrengthRef = useRef(0);
 
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const cursorPosRef = useRef({ x: 0, y: 0 });
+  const moveRafRef = useRef(0);
+
   const isMobile = useMemo(() => {
     if (typeof window === "undefined") return false;
     const hasTouchScreen =
@@ -41,13 +45,40 @@ const TargetCursor = ({
     [],
   );
 
+  // The original implementation called gsap.to() on every `mousemove`, which
+  // fires up to ~1000Hz on a high-polling-rate pointer. That created a fresh
+  // tween every event and pegged the main thread. Instead, we batch via RAF
+  // and lerp the cursor position ourselves — one tween for the whole session.
   const moveCursor = useCallback((x, y) => {
-    if (!cursorRef.current) return;
-    gsap.to(cursorRef.current, {
-      x,
-      y,
-      duration: 0.1,
-      ease: "power3.out",
+    pointerRef.current.x = x;
+    pointerRef.current.y = y;
+
+    if (moveRafRef.current || !cursorRef.current) return;
+
+    moveRafRef.current = requestAnimationFrame(() => {
+      moveRafRef.current = 0;
+
+      const cursor = cursorRef.current;
+      if (!cursor) return;
+
+      const pos = cursorPosRef.current;
+      const target = pointerRef.current;
+      // Light easing toward the pointer (~0.35 per frame ≈ 100ms half-life at
+      // 60fps). Keeps the cursor responsive without re-creating tweens.
+      pos.x += (target.x - pos.x) * 0.35;
+      pos.y += (target.y - pos.y) * 0.35;
+
+      if (Math.abs(target.x - pos.x) < 0.5) pos.x = target.x;
+      if (Math.abs(target.y - pos.y) < 0.5) pos.y = target.y;
+
+      gsap.set(cursor, { x: pos.x, y: pos.y });
+
+      if (pos.x !== target.x || pos.y !== target.y) {
+        moveRafRef.current = requestAnimationFrame(function follow() {
+          moveRafRef.current = 0;
+          moveCursor(target.x, target.y);
+        });
+      }
     });
   }, []);
 
@@ -79,6 +110,10 @@ const TargetCursor = ({
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
     });
+    cursorPosRef.current.x = window.innerWidth / 2;
+    cursorPosRef.current.y = window.innerHeight / 2;
+    pointerRef.current.x = cursorPosRef.current.x;
+    pointerRef.current.y = cursorPosRef.current.y;
 
     const createSpinTimeline = () => {
       if (spinTl.current) {
@@ -95,6 +130,10 @@ const TargetCursor = ({
 
     createSpinTimeline();
 
+    // Cached corner positions so we don't read transforms back from GSAP
+    // every tick (gsap.getProperty is O(reflow) and was called 4× per frame).
+    const cornerStateRef = { current: [0, 0, 0, 0].map(() => ({ x: 0, y: 0 })) };
+
     const tickerFn = () => {
       if (
         !targetCornerPositionsRef.current ||
@@ -107,36 +146,28 @@ const TargetCursor = ({
       const strength = activeStrengthRef.current;
       if (strength === 0) return;
 
-      const cursorX = gsap.getProperty(cursorRef.current, "x");
-      const cursorY = gsap.getProperty(cursorRef.current, "y");
+      const cursorX = cursorPosRef.current.x;
+      const cursorY = cursorPosRef.current.y;
 
-      const corners = Array.from(cornersRef.current);
-      corners.forEach((corner, i) => {
-        const currentX = gsap.getProperty(corner, "x");
-        const currentY = gsap.getProperty(corner, "y");
+      const corners = cornersRef.current;
+      const states = cornerStateRef.current;
+      const positions = targetCornerPositionsRef.current;
 
-        const targetX = targetCornerPositionsRef.current[i].x - cursorX;
-        const targetY = targetCornerPositionsRef.current[i].y - cursorY;
-
-        const finalX = currentX + (targetX - currentX) * strength;
-        const finalY = currentY + (targetY - currentY) * strength;
-
-        const duration = strength >= 0.99 ? (parallaxOn ? 0.2 : 0) : 0.05;
-
-        gsap.to(corner, {
-          x: finalX,
-          y: finalY,
-          duration: duration,
-          ease: duration === 0 ? "none" : "power1.out",
-          overwrite: "auto",
-        });
-      });
+      for (let i = 0; i < corners.length; i += 1) {
+        const corner = corners[i];
+        const state = states[i];
+        const targetX = positions[i].x - cursorX;
+        const targetY = positions[i].y - cursorY;
+        state.x += (targetX - state.x) * (parallaxOn ? 0.18 : 1);
+        state.y += (targetY - state.y) * (parallaxOn ? 0.18 : 1);
+        corner.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
+      }
     };
 
     tickerFnRef.current = tickerFn;
 
     const moveHandler = (e) => moveCursor(e.clientX, e.clientY);
-    window.addEventListener("mousemove", moveHandler);
+    window.addEventListener("mousemove", moveHandler, { passive: true });
 
     const scrollHandler = () => {
       if (!activeTarget || !cursorRef.current) return;
@@ -192,17 +223,14 @@ const TargetCursor = ({
       }
 
       activeTarget = target;
-      const corners = Array.from(cornersRef.current);
-      corners.forEach((corner) => gsap.killTweensOf(corner));
-
       gsap.killTweensOf(cursorRef.current, "rotation");
       spinTl.current?.pause();
       gsap.set(cursorRef.current, { rotation: 0 });
 
       const rect = target.getBoundingClientRect();
       const { borderWidth, cornerSize } = constants;
-      const cursorX = gsap.getProperty(cursorRef.current, "x");
-      const cursorY = gsap.getProperty(cursorRef.current, "y");
+      const cursorX = cursorPosRef.current.x;
+      const cursorY = cursorPosRef.current.y;
 
       targetCornerPositionsRef.current = [
         { x: rect.left - borderWidth, y: rect.top - borderWidth },
@@ -229,15 +257,6 @@ const TargetCursor = ({
         ease: "power2.out",
       });
 
-      corners.forEach((corner, i) => {
-        gsap.to(corner, {
-          x: targetCornerPositionsRef.current[i].x - cursorX,
-          y: targetCornerPositionsRef.current[i].y - cursorY,
-          duration: 0.2,
-          ease: "power2.out",
-        });
-      });
-
       const leaveHandler = () => {
         gsap.ticker.remove(tickerFnRef.current);
 
@@ -248,7 +267,6 @@ const TargetCursor = ({
 
         if (cornersRef.current) {
           const corners = Array.from(cornersRef.current);
-          gsap.killTweensOf(corners);
           const { cornerSize } = constants;
           const positions = [
             { x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
@@ -256,18 +274,11 @@ const TargetCursor = ({
             { x: cornerSize * 0.5, y: cornerSize * 0.5 },
             { x: -cornerSize * 1.5, y: cornerSize * 0.5 },
           ];
-          const tl = gsap.timeline();
           corners.forEach((corner, index) => {
-            tl.to(
-              corner,
-              {
-                x: positions[index].x,
-                y: positions[index].y,
-                duration: 0.3,
-                ease: "power3.out",
-              },
-              0,
-            );
+            const state = cornerStateRef.current[index];
+            state.x = positions[index].x;
+            state.y = positions[index].y;
+            corner.style.transform = `translate3d(${positions[index].x}px, ${positions[index].y}px, 0)`;
           });
         }
 
@@ -310,6 +321,10 @@ const TargetCursor = ({
     return () => {
       if (tickerFnRef.current) {
         gsap.ticker.remove(tickerFnRef.current);
+      }
+      if (moveRafRef.current) {
+        cancelAnimationFrame(moveRafRef.current);
+        moveRafRef.current = 0;
       }
 
       window.removeEventListener("mousemove", moveHandler);
