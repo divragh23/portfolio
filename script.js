@@ -1084,16 +1084,22 @@ function resolveScrollTarget(value) {
   return document.getElementById(cleaned);
 }
 
+// Snappy ease-out for anchor scrolls: quick start, gentle landing.
+const anchorScrollEase = (t) => 1 - Math.pow(1 - t, 3);
+
 function smoothScrollToTarget(target, { focus = false } = {}) {
   if (!target) return;
 
   const lenis = window.lenis;
 
   if (lenis && typeof lenis.scrollTo === "function") {
+    // Slightly shorter duration than the previous 1.05 s — the page feels
+    // far less "floaty" once you click a section.
     lenis.scrollTo(target, {
       offset: 0,
-      duration: prefersReducedMotion ? 0 : 1.05,
-      easing: (t) => 1 - Math.pow(1 - t, 4),
+      duration: prefersReducedMotion ? 0 : 0.85,
+      easing: anchorScrollEase,
+      lock: true,
     });
   } else {
     target.scrollIntoView({
@@ -1105,8 +1111,148 @@ function smoothScrollToTarget(target, { focus = false } = {}) {
   if (focus && typeof target.focus === "function") {
     window.setTimeout(() => {
       target.focus({ preventScroll: true });
-    }, prefersReducedMotion ? 0 : 600);
+    }, prefersReducedMotion ? 0 : 500);
   }
+}
+
+// Tracks which navigable section is currently in view and adds
+// .nav-link--active / aria-current to the matching navbar link.
+//
+// Single batched scroll listener; the loop runs at most once per
+// animation frame so it never competes with Lenis's RAF. The DOM is
+// re-queried lazily because the navbar is mounted by React after this
+// script runs, but the sections themselves live in static markup.
+function initActiveSectionTracking() {
+  let cachedOffsets = [];
+  let cachedNavLinks = [];
+  let currentId = "";
+  let rafQueued = false;
+  let resizeRafQueued = false;
+
+  function refreshOffsets() {
+    const sections = document.querySelectorAll("[data-section]");
+    const offsets = [];
+    sections.forEach((section) => {
+      const id = section.dataset.section || section.id;
+      if (!id) return;
+      const rect = section.getBoundingClientRect();
+      offsets.push({
+        id,
+        top: rect.top + window.scrollY,
+      });
+    });
+    offsets.sort((a, b) => a.top - b.top);
+    cachedOffsets = offsets;
+  }
+
+  function refreshNavLinks() {
+    cachedNavLinks = Array.from(document.querySelectorAll("[data-scroll-to]"));
+  }
+
+  function applyActive(id) {
+    for (const link of cachedNavLinks) {
+      const isActive = link.dataset.scrollTo === id;
+      const wasActive = link.classList.contains("nav-link--active");
+      if (isActive === wasActive) continue;
+
+      link.classList.toggle("nav-link--active", isActive);
+      if (isActive) {
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    }
+  }
+
+  function setActive(id) {
+    if (id === currentId) return;
+    currentId = id;
+    // Re-query links in case React mounted/replaced the navbar since the
+    // last update. querySelectorAll is fast and only runs on transitions.
+    refreshNavLinks();
+    applyActive(id);
+  }
+
+  function update() {
+    rafQueued = false;
+    if (!cachedOffsets.length) return;
+
+    // Trigger line ~32% from the top of the viewport. As a section's top
+    // crosses that line the nav highlight flips to it.
+    const triggerY = window.scrollY + window.innerHeight * 0.32;
+
+    let activeId = cachedOffsets[0].id;
+    for (const entry of cachedOffsets) {
+      if (entry.top <= triggerY) {
+        activeId = entry.id;
+      } else {
+        break;
+      }
+    }
+    setActive(activeId);
+  }
+
+  function queueUpdate() {
+    if (rafQueued) return;
+    rafQueued = true;
+    window.requestAnimationFrame(update);
+  }
+
+  function queueRefresh() {
+    if (resizeRafQueued) return;
+    resizeRafQueued = true;
+    window.requestAnimationFrame(() => {
+      resizeRafQueued = false;
+      refreshOffsets();
+      refreshNavLinks();
+      update();
+    });
+  }
+
+  refreshOffsets();
+  refreshNavLinks();
+  update();
+
+  // Single passive listener handles both native scroll and Lenis-driven
+  // scroll (Lenis writes to documentElement.scrollTop, which dispatches
+  // native scroll events on window).
+  window.addEventListener("scroll", queueUpdate, { passive: true });
+  window.addEventListener("resize", queueRefresh, { passive: true });
+
+  // Layout-changing milestones: re-measure offsets once they settle so
+  // the active highlight stays in sync with the document.
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(queueRefresh).catch(() => undefined);
+  }
+
+  const introObserver = new MutationObserver(() => queueRefresh());
+  introObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-home-intro-state"],
+  });
+
+  window.addEventListener("portfolio:lenis-ready", queueRefresh);
+
+  // After React mounts the navbar, the [data-scroll-to] links will exist —
+  // re-query them so the very first click already has the cached set.
+  const homeIntroRoot = document.getElementById("home-intro-root");
+  if (homeIntroRoot && cachedNavLinks.length === 0) {
+    const navObserver = new MutationObserver(() => {
+      const next = document.querySelectorAll("[data-scroll-to]");
+      if (next.length > 0) {
+        navObserver.disconnect();
+        cachedNavLinks = Array.from(next);
+        currentId = ""; // force re-apply
+        update();
+      }
+    });
+    navObserver.observe(homeIntroRoot, { childList: true, subtree: true });
+  }
+
+  // Public hook so the click handler in initSinglePageNavigation can
+  // pre-emptively light up the target section the instant the user clicks,
+  // instead of waiting for the first scroll frame.
+  window.__portfolioSetActiveSection = setActive;
 }
 
 function initSinglePageNavigation() {
@@ -1158,6 +1304,14 @@ function initSinglePageNavigation() {
     }
 
     event.preventDefault();
+
+    // Pre-emptively flag the destination section as active so the navbar
+    // highlight switches the moment the click registers, not after the
+    // scroll animation finishes.
+    if (typeof window.__portfolioSetActiveSection === "function") {
+      window.__portfolioSetActiveSection(hash);
+    }
+
     smoothScrollToTarget(target);
 
     if (history.replaceState) {
@@ -1205,6 +1359,7 @@ function initSinglePageNavigation() {
 
 initViewportBezel();
 initSinglePageNavigation();
+initActiveSectionTracking();
 if (!usesReactSiteMotion) {
   initReveal();
 }
