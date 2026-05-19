@@ -212,22 +212,36 @@ function HomeBrandPill({ introStage, reducedMotion, isMobile, playIntroAnimation
   );
 }
 
+function detectWebgl2() {
+  if (typeof document === "undefined") return false;
+  try {
+    const canvas = document.createElement("canvas");
+    return !!canvas.getContext("webgl2");
+  } catch {
+    return false;
+  }
+}
+
 function InfiniteNavMenu({ introStage, reducedMotion, isMobile, playIntroAnimations }) {
+  const [webglFailed, setWebglFailed] = useState(false);
+  const webgl2Supported = useMemo(() => detectWebgl2(), []);
   const items = useMemo(() => {
-    if (typeof document === "undefined" || reducedMotion) return [];
+    if (typeof document === "undefined" || reducedMotion || !webgl2Supported) return [];
     try {
       return buildInfiniteMenuItems();
     } catch {
       return [];
     }
-  }, [reducedMotion]);
+  }, [reducedMotion, webgl2Supported]);
   const introFinished = introStage === INTRO_STAGES.ready;
   const lift = reducedMotion ? 0 : isMobile ? 18 : 32;
+  const shouldUseFallback =
+    reducedMotion || webglFailed || !webgl2Supported || !items.length;
 
-  // Accessibility fallback: if the user prefers reduced motion (or WebGL
-  // isn't available), we render a plain list of anchor links so keyboard
-  // and screen-reader users still have a navbar.
-  if (reducedMotion || !items.length) {
+  // Accessibility fallback: if the user prefers reduced motion, WebGL2 is
+  // unavailable, or the sphere blew up at init time, we render a plain
+  // list of anchor links so the navbar still works.
+  if (shouldUseFallback) {
     return (
       <nav
         className="infinite-nav infinite-nav--fallback"
@@ -283,6 +297,7 @@ function InfiniteNavMenu({ introStage, reducedMotion, isMobile, playIntroAnimati
         scale={isMobile ? 1.1 : 0.95}
         onSelect={handleSelect}
         autoStart={introFinished}
+        onError={() => setWebglFailed(true)}
       />
     </motion.aside>
   );
