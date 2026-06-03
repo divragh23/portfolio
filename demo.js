@@ -1,8 +1,3 @@
-// === Live traffic-sign detection demo ===
-// Inference runs on a private proxy (DigitalOcean) that holds the Roboflow
-// key server-side — no API key is ever exposed in the browser.
-//
-// After deploying the proxy, replace the URL below with your DO app URL:
 const API_BASE = "https://octopus-app-xnkn7.ondigitalocean.app";
 
 const fileInput = document.getElementById("demo-file");
