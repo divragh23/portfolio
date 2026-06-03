@@ -3,7 +3,7 @@
 // key server-side — no API key is ever exposed in the browser.
 //
 // After deploying the proxy, replace the URL below with your DO app URL:
-const API_BASE = "https://REPLACE-WITH-YOUR-DO-APP.ondigitalocean.app";
+const API_BASE = "https://octopus-app-xnkn7.ondigitalocean.app";
 
 const fileInput = document.getElementById("demo-file");
 const camBtn = document.getElementById("demo-cam");
