@@ -72,3 +72,26 @@
   border-radius: 6px;
   padding: 4px 10px;
 }
+/* launch-demo button spacing */
+.project-cta {
+  margin-top: 16px;
+}
+
+/* coming-soon projects */
+.project-soon .project-body {
+  opacity: 0.55;
+}
+
+.soon-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 9px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
