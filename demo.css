@@ -17,9 +17,11 @@
 }
 
 .btn {
+  display: inline-block;
   font-family: var(--mono);
   font-size: 0.85rem;
   color: var(--text);
+  text-decoration: none;
   background: var(--panel);
   border: 1px solid var(--line);
   padding: 10px 16px;
