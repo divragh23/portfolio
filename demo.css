@@ -1,4 +1,3 @@
-/* LIVE DEMO */
 .demo-lede {
   color: var(--muted);
   max-width: 60ch;
@@ -74,12 +73,10 @@
   border-radius: 6px;
   padding: 4px 10px;
 }
-/* launch-demo button spacing */
 .project-cta {
   margin-top: 16px;
 }
 
-/* coming-soon projects */
 .project-soon .project-body {
   opacity: 0.55;
 }

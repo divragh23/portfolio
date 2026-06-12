@@ -14,12 +14,9 @@
 
 html {
   scroll-behavior: smooth;
-  /* offset anchor landings so headings clear the sticky nav */
   scroll-padding-top: 84px;
 }
 
-/* prevent scroll anchoring from hijacking smooth anchor jumps
-   (reveal animations / marquee were shifting the landing position) */
 body { overflow-anchor: none; }
 
 body {
@@ -31,7 +28,6 @@ body {
   overflow-x: hidden;
 }
 
-/* faint technical grid */
 .grid-bg {
   position: fixed;
   inset: 0;
@@ -49,7 +45,6 @@ main, .nav, .footer { position: relative; z-index: 1; }
 
 .accent { color: var(--accent); }
 
-/* NAV */
 .nav {
   position: sticky;
   top: 0;
@@ -79,7 +74,6 @@ main, .nav, .footer { position: relative; z-index: 1; }
 }
 .nav-links a:hover { color: var(--accent); }
 
-/* LAYOUT */
 main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px); }
 
 .section { padding: clamp(70px, 12vh, 130px) 0; border-top: 1px solid var(--line); }
@@ -103,7 +97,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   font-weight: 500;
 }
 
-/* HERO */
 .hero { padding: clamp(80px, 18vh, 180px) 0 clamp(60px, 10vh, 120px); }
 .kicker {
   font-family: var(--mono);
@@ -136,7 +129,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   padding: 6px 14px;
 }
 
-/* ABOUT */
 .about-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(30px, 6vw, 70px); }
 .about-text { font-size: 17px; color: #c4c4cb; }
 .facts { list-style: none; font-family: var(--mono); font-size: 13.5px; }
@@ -150,7 +142,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
 .facts .k { color: var(--muted); }
 .facts .v { color: var(--text); text-align: right; }
 
-/* WORK */
 .projects { display: flex; flex-direction: column; }
 .project {
   display: grid;
@@ -176,7 +167,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   padding: 4px 9px;
 }
 
-/* STACK */
 .stack-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(20px, 4vw, 40px); }
 .stack-col h4 {
   font-family: var(--mono);
@@ -189,7 +179,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
 .stack-col ul { list-style: none; }
 .stack-col li { padding: 7px 0; color: #c4c4cb; font-size: 14.5px; border-bottom: 1px solid var(--line); }
 
-/* CONTACT */
 .contact-lede { max-width: 520px; color: #c4c4cb; font-size: 17px; }
 .mail {
   display: inline-block;
@@ -213,7 +202,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
 }
 .socials a:hover { color: var(--accent); }
 
-/* FOOTER */
 .footer {
   max-width: var(--max);
   margin: 0 auto;
@@ -244,11 +232,9 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
 .footer-meta a svg { display: block; }
 .footer-meta a:hover { color: var(--accent); transform: translateY(-1px); }
 
-/* REVEAL ANIMATION */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.in { opacity: 1; transform: none; }
 
-/* SCROLL PROGRESS BAR */
 .scroll-progress {
   position: fixed;
   top: 0;
@@ -262,7 +248,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   will-change: transform;
 }
 
-/* CURSOR GLOW */
 .glow {
   position: fixed;
   top: 0;
@@ -278,7 +263,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   transition: opacity 0.4s ease;
 }
 
-/* MARQUEE */
 .marquee {
   position: relative;
   overflow: hidden;
@@ -304,7 +288,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   to { transform: translateX(-50%); }
 }
 
-/* ANIMATED TAGS */
 .tag { transition: color 0.2s, border-color 0.2s, transform 0.2s, background 0.2s; cursor: default; }
 .tag:hover {
   color: var(--accent);
@@ -313,17 +296,14 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
   background: rgba(74, 222, 128, 0.06);
 }
 
-/* CHIP / STACK HOVER */
 .chips span { transition: color 0.2s, border-color 0.2s, transform 0.2s; }
 .chips span:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
 .stack-col li { transition: color 0.2s, padding-left 0.2s, border-color 0.2s; }
 .stack-col li:hover { color: var(--accent); padding-left: 8px; border-color: var(--accent); }
 
-/* PROJECT GLOW ON HOVER */
 .project:hover h3 { color: var(--accent); }
 .project h3 { transition: color 0.25s; }
 
-/* STAGGERED LIST REVEAL */
 .stack-col.in li, .project.in .chips span { animation: pop-in 0.5s ease both; }
 @keyframes pop-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -340,7 +320,6 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px);
 .stack-col.in li:nth-child(9)  { animation-delay: 0.36s; }
 .stack-col.in li:nth-child(n+10) { animation-delay: 0.40s; }
 
-/* RESPONSIVE */
 @media (max-width: 720px) {
   .about-grid { grid-template-columns: 1fr; }
   .stack-grid { grid-template-columns: repeat(2, 1fr); }

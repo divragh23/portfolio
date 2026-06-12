@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 ROBOFLOW_API_KEY = os.environ.get("ROBOFLOW_API_KEY", "")
-ROBOFLOW_MODEL_ID = os.environ.get("ROBOFLOW_MODEL_ID", "")  # e.g. "traffic-signs/2"
+ROBOFLOW_MODEL_ID = os.environ.get("ROBOFLOW_MODEL_ID", "")
 ALLOWED_ORIGINS = [
     o.strip()
     for o in os.environ.get(

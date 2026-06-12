@@ -1,9 +1,7 @@
-// Current year in footer
 document.getElementById("year").textContent = new Date().getFullYear();
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Scroll reveal via IntersectionObserver
 const els = document.querySelectorAll(".reveal");
 const io = new IntersectionObserver(
   (entries) => {
@@ -18,12 +16,10 @@ const io = new IntersectionObserver(
 );
 els.forEach((el) => io.observe(el));
 
-// Stagger hero reveals slightly for a cleaner load
 document.querySelectorAll(".hero .reveal").forEach((el, i) => {
   el.style.transitionDelay = `${i * 90}ms`;
 });
 
-// Scroll progress bar
 const bar = document.querySelector(".scroll-progress");
 function updateProgress() {
   const h = document.documentElement;
@@ -33,7 +29,6 @@ function updateProgress() {
 window.addEventListener("scroll", updateProgress, { passive: true });
 updateProgress();
 
-// Cursor-follow glow (skip on touch / reduced motion)
 const glow = document.querySelector(".glow");
 if (glow && !reduceMotion && window.matchMedia("(pointer: fine)").matches) {
   let raf = null;
@@ -49,7 +44,6 @@ if (glow && !reduceMotion && window.matchMedia("(pointer: fine)").matches) {
   document.addEventListener("mouseleave", () => (glow.style.opacity = "0"));
 }
 
-// Text-scramble effect on the hero name
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*<>/\\{}[]";
 function scramble(el, done) {
   const original = el.dataset.text;
@@ -79,7 +73,6 @@ function scramble(el, done) {
 
 const nameEl = document.querySelector(".hero h1");
 if (nameEl) {
-  // Preserve the trailing cursor; scramble only the name text
   const cursor = nameEl.querySelector(".cursor");
   const textNodes = "Divyansh\nRaghuvanshi";
   if (!reduceMotion) {

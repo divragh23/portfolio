@@ -64,7 +64,6 @@ async function infer(blob) {
   }
 }
 
-// --- image upload ---
 fileInput.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -78,7 +77,6 @@ fileInput.addEventListener("change", () => {
   img.src = URL.createObjectURL(file);
 });
 
-// --- webcam ---
 function captureFrame() {
   if (!stream) return;
   canvas.width = video.videoWidth;
@@ -116,13 +114,11 @@ stopBtn.addEventListener("click", () => {
   stopBtn.hidden = true;
   setStatus("camera stopped");
 });
-// --- reveal the demo only when the project button is clicked ---
 const demoLaunch = document.getElementById("demo-launch");
 const demoSection = document.getElementById("demo");
 if (demoLaunch && demoSection) {
   demoLaunch.addEventListener("click", () => {
     demoSection.hidden = false;
-    // make sure the reveal-animated children become visible
     demoSection.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
     demoSection.scrollIntoView({ behavior: "smooth", block: "start" });
   });
